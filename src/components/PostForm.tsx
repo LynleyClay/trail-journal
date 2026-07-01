@@ -145,6 +145,15 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
     );
   }
 
+  function updatePhotoCoord(index: number, field: 'lat' | 'lng', value: string) {
+    const parsed = value.trim() === '' ? undefined : Number(value);
+    setPhotos((prev) =>
+      prev.map((p, i) =>
+        i === index ? { ...p, [field]: parsed === undefined || isNaN(parsed) ? undefined : parsed } : p
+      )
+    );
+  }
+
   function removePhoto(index: number) {
     setPhotos((prev) => {
       const updated = prev.filter((_, i) => i !== index);
@@ -376,11 +385,29 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
                 />
                 <div className="flex-1 min-w-0 space-y-2">
                   <p className="text-sm text-stone-600 truncate">{photo.filename}</p>
-                  {photo.lat !== undefined && photo.lng !== undefined && (
-                    <p className="text-xs text-stone-400">
-                      GPS: {photo.lat.toFixed(5)}, {photo.lng.toFixed(5)}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-stone-500" htmlFor={`lat-${i}`}>
+                      GPS:
+                    </label>
+                    <input
+                      id={`lat-${i}`}
+                      type="number"
+                      step="any"
+                      value={photo.lat ?? ''}
+                      onChange={(e) => updatePhotoCoord(i, 'lat', e.target.value)}
+                      placeholder="Latitude"
+                      className="w-28 border border-stone-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <input
+                      type="number"
+                      step="any"
+                      value={photo.lng ?? ''}
+                      onChange={(e) => updatePhotoCoord(i, 'lng', e.target.value)}
+                      placeholder="Longitude"
+                      aria-label="Longitude"
+                      className="w-28 border border-stone-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
                   <input
                     type="text"
                     value={photo.caption ?? ''}
