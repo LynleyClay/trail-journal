@@ -1,0 +1,8 @@
+{
+  "name": "Trail Journal",
+  "tagline": "Notes from the trail",
+  "map": {
+    "defaultCenter": [47.5, -120.5],
+    "defaultZoom": 7
+  }
+}
