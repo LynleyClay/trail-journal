@@ -198,6 +198,12 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
     }
   }
 
+  async function handleLogout() {
+    await fetch('/api/logout', { method: 'POST' });
+    router.push('/');
+    router.refresh();
+  }
+
   async function handleDelete() {
     if (!slug) return;
     if (!window.confirm('Delete this post permanently? This cannot be undone.')) return;
@@ -453,6 +459,13 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
           </button>
         )}
       </div>
+
+      <button
+        onClick={handleLogout}
+        className="text-xs text-stone-400 hover:text-stone-600 underline"
+      >
+        Log out
+      </button>
     </div>
   );
 }

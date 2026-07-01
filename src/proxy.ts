@@ -1,47 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
+import { SESSION_COOKIE_NAME, isValidSession } from '@/lib/auth';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const PUBLIC_PATHS = new Set(['/admin/login', '/api/login']);
 
-function safeEqual(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
-}
-
-function isAuthorized(request: NextRequest): boolean {
-  const expectedUser = process.env.ADMIN_USERNAME;
-  const expectedPass = process.env.ADMIN_PASSWORD;
-  if (!expectedUser || !expectedPass) return false;
-
-  const header = request.headers.get('authorization');
-  if (!header?.startsWith('Basic ')) return false;
-
-  const decoded = Buffer.from(header.slice(6), 'base64').toString('utf-8');
-  const separatorIndex = decoded.indexOf(':');
-  if (separatorIndex === -1) return false;
-
-  const user = decoded.slice(0, separatorIndex);
-  const pass = decoded.slice(separatorIndex + 1);
-  return safeEqual(user, expectedUser) && safeEqual(pass, expectedPass);
-}
-
-function unauthorized(): NextResponse {
-  return new NextResponse('Authentication required', {
-    status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Trail Journal Admin"' },
-  });
+function isAuthenticated(request: NextRequest): boolean {
+  return isValidSession(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 }
 
 // Reader-facing pages and reads are public. Only the admin UI and any
-// request that mutates content require the site owner's credentials.
+// request that mutates content require a logged-in session.
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
+
+  if (PUBLIC_PATHS.has(pathname)) {
+    return NextResponse.next();
+  }
+
   const isAdminPage = pathname.startsWith('/admin');
   const isMutatingApi = pathname.startsWith('/api') && MUTATING_METHODS.has(request.method);
 
-  if ((isAdminPage || isMutatingApi) && !isAuthorized(request)) {
-    return unauthorized();
+  if (isAdminPage && !isAuthenticated(request)) {
+    const loginUrl = new URL('/admin/login', request.url);
+    loginUrl.searchParams.set('returnTo', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isMutatingApi && !isAuthenticated(request)) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
   return NextResponse.next();

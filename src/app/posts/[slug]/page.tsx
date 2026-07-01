@@ -61,6 +61,7 @@ export default async function TripReportPage({ params }: PageProps) {
           </time>
           <Link
             href={`/admin/edit/${post.slug}`}
+            prefetch={false}
             className="text-xs text-stone-400 hover:text-emerald-700 hover:underline"
           >
             Edit post

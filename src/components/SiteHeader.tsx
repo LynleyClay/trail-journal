@@ -18,7 +18,11 @@ export function SiteHeader({ siteName }: SiteHeaderProps) {
           <Link href="/map" className="text-stone-600 hover:text-emerald-700 transition-colors">
             Map
           </Link>
-          <Link href="/admin/new" className="text-emerald-700 hover:text-emerald-900 transition-colors">
+          <Link
+            href="/admin/new"
+            prefetch={false}
+            className="text-emerald-700 hover:text-emerald-900 transition-colors"
+          >
             + New Post
           </Link>
         </nav>
