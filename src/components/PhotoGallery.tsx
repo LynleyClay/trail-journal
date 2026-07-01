@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import type { Photo } from '@/lib/posts';
+import { photoUrl } from '@/lib/photo-url';
 
 interface PhotoGalleryProps {
   slug: string;
@@ -17,7 +18,7 @@ export function PhotoGallery({ slug, photos }: PhotoGalleryProps) {
             <figure>
               <div className="relative aspect-[4/3] w-full">
                 <Image
-                  src={`/photos/${slug}/${photo.filename}`}
+                  src={photoUrl(slug, photo.filename)}
                   alt={photo.caption}
                   fill
                   className="object-cover"
@@ -29,7 +30,7 @@ export function PhotoGallery({ slug, photos }: PhotoGalleryProps) {
           ) : (
             <div className="relative aspect-[4/3] w-full">
               <Image
-                src={`/photos/${slug}/${photo.filename}`}
+                src={photoUrl(slug, photo.filename)}
                 alt={`Photo ${i + 1}`}
                 fill
                 className="object-cover"

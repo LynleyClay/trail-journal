@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "id": "the-approach-trail",
+    "slug": "the-approach-trail",
+    "title": "The Approach Trail to Springer Mountain",
+    "date": "2022-02-28",
+    "excerpt": "How do you possibly fathom walking 2,000 miles across 14 states",
+    "coverPhoto": "https://dbdw1r1aim2dfqiv.public.blob.vercel-storage.com/photos/1781293838394-Image%20from%20iOS.jpeg",
+    "trail": "AT",
+    "published": true,
+    "photos": [
+      {
+        "filename": "https://dbdw1r1aim2dfqiv.public.blob.vercel-storage.com/photos/1781293838394-Image%20from%20iOS.jpeg",
+        "lat": 34.56269712140934,
+        "lng": -84.24694061279298
+      }
+    ]
+  }
+]

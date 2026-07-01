@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Post } from '@/lib/posts';
+import { photoUrl } from '@/lib/photo-url';
 
 function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -17,35 +18,36 @@ interface PostCardProps {
 }
 
 export function PostCard({ post }: PostCardProps) {
-  const coverSrc = `/photos/${post.slug}/${post.coverPhoto}`;
-
   return (
-    <Link
-      href={`/posts/${post.slug}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-stone-200 hover:shadow-lg transition-shadow"
-    >
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-stone-100">
-        <Image
-          src={coverSrc}
-          alt={post.title}
-          fill
-          className="object-cover transition-transform group-hover:scale-105"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
-      </div>
-      <div className="flex flex-col gap-2 p-4">
-        {post.trail && (
-          <span className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            {post.trail}
-          </span>
+    <Link href={`/posts/${post.slug}`} className="group flex gap-6 items-start">
+      <div className="w-40 h-28 rounded-lg overflow-hidden bg-stone-200 flex-shrink-0 flex items-center justify-center">
+        {post.coverPhoto ? (
+          <Image
+            src={photoUrl(post.slug, post.coverPhoto)}
+            alt={post.title}
+            width={160}
+            height={112}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <span className="text-3xl">🥾</span>
         )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          {post.trail && (
+            <span className="text-xs font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+              {post.trail}
+            </span>
+          )}
+          <time className="text-xs text-stone-400" dateTime={post.date}>
+            {formatDate(post.date)}
+          </time>
+        </div>
         <h2 className="text-lg font-bold text-stone-900 group-hover:text-emerald-700 transition-colors">
           {post.title}
         </h2>
-        <time className="text-sm text-stone-500" dateTime={post.date}>
-          {formatDate(post.date)}
-        </time>
-        <p className="text-sm text-stone-600 line-clamp-3">{post.excerpt}</p>
+        <p className="mt-1 text-sm text-stone-600 line-clamp-2">{post.excerpt}</p>
       </div>
     </Link>
   );

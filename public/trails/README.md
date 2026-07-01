@@ -1,19 +1,21 @@
 # Trail GeoJSON Files
 
-Place simplified GeoJSON files for the three long trails here:
-
 - `pct.geojson` — Pacific Crest Trail
 - `cdt.geojson` — Continental Divide Trail
 - `at.geojson` — Appalachian Trail
 
-## Sourcing
+Each file is a single `MultiLineString` feature, generalized to ~0.001°
+tolerance server-side to keep file size reasonable for a background map
+overlay (rather than precision navigation data).
 
-- PCT: https://github.com/osm-us/pct-data (or export from OpenStreetMap relation 1243790)
-- CDT: Export from OpenStreetMap relation 921859
-- AT: Export from OpenStreetMap relation 3238008
+## Source
 
-## Simplification
+USGS "National Trails" layer from The National Map transportation service
+(public domain, U.S. federal government data):
+https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/11
 
-Full-resolution files can exceed 50 MB. Simplify to ≤ 500 KB per file using
-[Mapshaper](https://mapshaper.org/) with Douglas-Peucker at 0.001° tolerance
-before committing.
+Segments were selected by their `nationaltraildesignation` attribute
+(`NST - Appalachian`, `NST - Pacific Crest`, `NST - Continental Divide`) and
+merged into one feature per trail. To refresh, re-run the same query with
+`outSR=4326`, `f=geojson`, and pagination via `resultOffset`/`resultRecordCount`
+(the service caps at 2000 records per request).

@@ -17,9 +17,18 @@ vi.mock('fs', () => ({
   readFileSync: vi.fn(),
 }));
 
+const { putMock } = vi.hoisted(() => ({
+  putMock: vi.fn().mockResolvedValue({ url: 'https://example.public.blob.vercel-storage.com/photos/1-cover.jpg' }),
+}));
+
+vi.mock('@vercel/blob', () => ({ put: putMock }));
+
 import { POST } from '@/app/api/upload/route';
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  delete process.env.BLOB_READ_WRITE_TOKEN;
+});
 
 function makeUploadRequest(
   filename: string,
@@ -61,5 +70,16 @@ describe('POST /api/upload', () => {
     const req = makeUploadRequest('huge.jpg', 'image/jpeg', twentyOneMB);
     const res = await POST(req);
     expect(res.status).toBe(413);
+  });
+
+  it('uploads to Vercel Blob and returns its absolute URL when BLOB_READ_WRITE_TOKEN is set', async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = 'test-token';
+    const req = makeUploadRequest('cover.jpg', 'image/jpeg', 100);
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+    const json = (await res.json()) as { filename: string; url: string };
+    expect(json.url).toBe('https://example.public.blob.vercel-storage.com/photos/1-cover.jpg');
+    expect(json.filename).toBe(json.url);
+    expect(putMock).toHaveBeenCalled();
   });
 });

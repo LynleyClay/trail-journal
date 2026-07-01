@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import type { FeatureCollection } from 'geojson';
 import type { Post } from '@/lib/posts';
+import { photoUrl } from '@/lib/photo-url';
 import { TILE_URL, TILE_ATTRIBUTION, fixLeafletIcons } from '@/lib/leaflet-config';
 import { Lightbox } from './Lightbox';
 import 'leaflet/dist/leaflet.css';
@@ -72,7 +73,7 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
                 {post.coverPhoto && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={`/photos/${post.slug}/${post.coverPhoto}`}
+                    src={photoUrl(post.slug, post.coverPhoto)}
                     alt={post.title}
                     className="w-full rounded"
                     style={{ maxHeight: 80, objectFit: 'cover' }}
@@ -110,7 +111,7 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
                 eventHandlers={{
                   click: () =>
                     setLightbox({
-                      src: `/photos/${post.slug}/${photo.filename}`,
+                      src: photoUrl(post.slug, photo.filename),
                       alt: photo.caption ?? photo.filename,
                     }),
                 }}

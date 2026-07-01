@@ -11,6 +11,10 @@ vi.mock('@/lib/posts', () => ({
   getPublishedPosts: vi.fn().mockReturnValue([]),
 }));
 
+// revalidatePath requires a live Next.js request context that isn't present
+// when route handlers are invoked directly in tests.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+
 import { POST } from '@/app/api/posts/route';
 
 afterEach(() => vi.clearAllMocks());

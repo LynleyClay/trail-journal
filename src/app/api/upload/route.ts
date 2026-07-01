@@ -5,12 +5,49 @@ import * as path from 'path';
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 
+interface UploadResult {
+  filename: string;
+  url: string;
+}
+
+function hasBlobStore(): boolean {
+  return !!process.env.BLOB_READ_WRITE_TOKEN;
+}
+
 function sanitizeFilename(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9._-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+async function saveToBlob(safeName: string, buffer: Buffer, contentType: string): Promise<UploadResult> {
+  const { put } = await import('@vercel/blob');
+  const pathname = `photos/${Date.now()}-${safeName}`;
+  const blob = await put(pathname, buffer, { access: 'public', contentType });
+  return { filename: blob.url, url: blob.url };
+}
+
+function saveToLocal(slug: string, safeName: string, buffer: Buffer): UploadResult {
+  const dir = path.join(process.cwd(), 'public', 'photos', slug);
+  fs.mkdirSync(dir, { recursive: true });
+
+  // Resolve filename collision
+  let filename = safeName;
+  let counter = 1;
+  while (fs.existsSync(path.join(dir, filename))) {
+    const ext = path.extname(safeName);
+    const base = path.basename(safeName, ext);
+    filename = `${base}-${counter}${ext}`;
+    counter++;
+  }
+
+  const tmpPath = path.join(dir, `${filename}.tmp`);
+  fs.writeFileSync(tmpPath, buffer);
+  fs.renameSync(tmpPath, path.join(dir, filename));
+
+  return { filename, url: `/photos/${slug}/${filename}` };
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -41,26 +78,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const safeName = sanitizeFilename(file.name);
-  const dir = path.join(process.cwd(), 'public', 'photos', slug);
-  fs.mkdirSync(dir, { recursive: true });
-
-  // Resolve filename collision
-  let filename = safeName;
-  let counter = 1;
-  while (fs.existsSync(path.join(dir, filename))) {
-    const ext = path.extname(safeName);
-    const base = path.basename(safeName, ext);
-    filename = `${base}-${counter}${ext}`;
-    counter++;
-  }
-
   const buffer = Buffer.from(await file.arrayBuffer());
-  const tmpPath = path.join(dir, `${filename}.tmp`);
-  fs.writeFileSync(tmpPath, buffer);
-  fs.renameSync(tmpPath, path.join(dir, filename));
 
-  return NextResponse.json(
-    { filename, url: `/photos/${slug}/${filename}` },
-    { status: 201 }
-  );
+  const result = hasBlobStore()
+    ? await saveToBlob(safeName, buffer, file.type)
+    : saveToLocal(slug, safeName, buffer);
+
+  return NextResponse.json(result, { status: 201 });
 }
