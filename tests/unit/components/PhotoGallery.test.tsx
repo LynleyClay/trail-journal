@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { PhotoGallery } from '@/components/PhotoGallery';
 import type { Photo } from '@/lib/posts';
 
@@ -27,5 +28,28 @@ describe('PhotoGallery', () => {
   it('renders without error when given an empty photos array', () => {
     const { container } = render(<PhotoGallery slug="test-post" photos={[]} />);
     expect(container.firstChild).toBeNull();
+  });
+
+  it('opens a lightbox with the full photo when clicked', async () => {
+    const user = userEvent.setup();
+    render(<PhotoGallery slug="test-post" photos={photos} />);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await user.click(screen.getByRole('button', { name: /view larger photo: morning light/i }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByRole('img')).toHaveAttribute('alt', 'Morning light');
+  });
+
+  it('closes the lightbox on Escape', async () => {
+    const user = userEvent.setup();
+    render(<PhotoGallery slug="test-post" photos={photos} />);
+
+    await user.click(screen.getByRole('button', { name: /view larger photo: morning light/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
