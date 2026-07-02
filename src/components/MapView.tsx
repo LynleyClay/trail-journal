@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from 'react-leaflet';
 import type { FeatureCollection } from 'geojson';
 import type { Post } from '@/lib/posts';
 import { photoUrl } from '@/lib/photo-url';
@@ -19,6 +19,28 @@ interface MapViewProps {
 interface LightboxState {
   src: string;
   alt: string;
+}
+
+// Fits the initial view to all trail lines so every trail is visible on
+// load regardless of screen size, rather than relying on a fixed zoom
+// that only happens to work at one viewport width.
+function FitAllTrails({ trailGeoJsons }: { trailGeoJsons: Record<string, FeatureCollection> }) {
+  const map = useMap();
+  useEffect(() => {
+    const geoJsons = Object.values(trailGeoJsons);
+    if (geoJsons.length === 0) return;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const L = require('leaflet') as typeof import('leaflet');
+    const bounds = L.latLngBounds([]);
+    for (const geoJson of geoJsons) {
+      bounds.extend(L.geoJSON(geoJson).getBounds());
+    }
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [20, 20] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return null;
 }
 
 export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZoom }: MapViewProps) {
@@ -43,6 +65,7 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
         scrollWheelZoom
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+        <FitAllTrails trailGeoJsons={trailGeoJsons} />
 
         {Object.entries(trailGeoJsons).map(([name, geoJson]) => (
           <GeoJSON

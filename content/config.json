@@ -2,7 +2,7 @@
   "name": "Trail Journal",
   "tagline": "Stories and lessons from long trails.",
   "map": {
-    "defaultCenter": [35.5, -83.5],
-    "defaultZoom": 7
+    "defaultCenter": [39.5, -98.0],
+    "defaultZoom": 4
   }
 }

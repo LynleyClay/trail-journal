@@ -26,3 +26,15 @@ fetched at full precision (`outSR=4326`, `f=geojson`, no
 `maxAllowableOffset`, paginated via `resultOffset`/`resultRecordCount` since
 the service caps at 2000 records per request), simplified locally, and
 merged into one feature per trail.
+
+### Known gap: Massachusetts (AT)
+
+The USGS layer has essentially no `NST - Appalachian` coverage between the
+Connecticut and Vermont borders — not a bug in our processing, the source
+dataset itself is missing that whole stretch. Patched by pulling
+`way["name"="Appalachian Trail"]` from OpenStreetMap
+(https://overpass-api.de/api/interpreter) within that bounding box and
+appending those segments (also RDP-simplified) into `at.geojson`. OSM data
+is ODbL-licensed; attribution is already covered by the "© OpenStreetMap
+contributors" notice shown on every map (same requirement as the map
+tiles). If other gaps turn up in other states, the same approach applies.

@@ -33,13 +33,21 @@ export default async function MapPage() {
   const trailGeoJsons = loadTrailGeoJsons();
 
   return (
-    <div className="flex-1 relative">
-      <MapView
-        posts={posts}
-        trailGeoJsons={trailGeoJsons}
-        defaultCenter={config.map.defaultCenter}
-        defaultZoom={config.map.defaultZoom}
-      />
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="border-b border-stone-200 bg-white px-4 py-3 shrink-0">
+        <h1 className="text-lg font-bold text-stone-900">Trail Map</h1>
+        <p className="text-sm text-stone-500">
+          These are the trails I&apos;ve hiked, with photos and journal entries pinned to where they happened.
+        </p>
+      </div>
+      <div className="flex-1 relative">
+        <MapView
+          posts={posts}
+          trailGeoJsons={trailGeoJsons}
+          defaultCenter={config.map.defaultCenter}
+          defaultZoom={config.map.defaultZoom}
+        />
+      </div>
     </div>
   );
 }
