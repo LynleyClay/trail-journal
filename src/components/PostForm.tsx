@@ -11,6 +11,8 @@ const MarkdownEditor = dynamic(
   { ssr: false }
 );
 
+const LocationPicker = dynamic(() => import('@/components/LocationPicker'), { ssr: false });
+
 interface UploadedPhoto extends Photo {
   url: string;
   previewUrl: string;
@@ -152,6 +154,10 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
         i === index ? { ...p, [field]: parsed === undefined || isNaN(parsed) ? undefined : parsed } : p
       )
     );
+  }
+
+  function updatePhotoPosition(index: number, lat: number, lng: number) {
+    setPhotos((prev) => prev.map((p, i) => (i === index ? { ...p, lat, lng } : p)));
   }
 
   function removePhoto(index: number) {
@@ -385,6 +391,11 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
                 />
                 <div className="flex-1 min-w-0 space-y-2">
                   <p className="text-sm text-stone-600 truncate">{photo.filename}</p>
+                  <LocationPicker
+                    lat={photo.lat}
+                    lng={photo.lng}
+                    onChange={(lat, lng) => updatePhotoPosition(i, lat, lng)}
+                  />
                   <div className="flex items-center gap-2">
                     <label className="text-xs text-stone-500" htmlFor={`lat-${i}`}>
                       GPS:
