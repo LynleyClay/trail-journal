@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { FeatureCollection } from 'geojson';
 import type { Trail, Photo } from '@/lib/posts';
 
 const MarkdownEditor = dynamic(
@@ -60,6 +61,7 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
   const [excerpt, setExcerpt] = useState(data.excerpt);
   const [body, setBody] = useState(data.body);
   const [trail, setTrail] = useState<Trail | ''>(data.trail);
+  const [trailGeoJson, setTrailGeoJson] = useState<FeatureCollection | undefined>(undefined);
   const [photos, setPhotos] = useState<UploadedPhoto[]>(data.photos);
   const [coverPhoto, setCoverPhoto] = useState(data.coverPhoto);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -69,6 +71,25 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
   const [deleting, setDeleting] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!trail) {
+      setTrailGeoJson(undefined);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/trails/${trail.toLowerCase()}.geojson`)
+      .then((res) => (res.ok ? (res.json() as Promise<FeatureCollection>) : undefined))
+      .then((geoJson) => {
+        if (!cancelled) setTrailGeoJson(geoJson);
+      })
+      .catch(() => {
+        if (!cancelled) setTrailGeoJson(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [trail]);
 
   function validate(): FormErrors {
     const errs: FormErrors = {};
@@ -394,6 +415,7 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
                   <LocationPicker
                     lat={photo.lat}
                     lng={photo.lng}
+                    trailGeoJson={trailGeoJson}
                     onChange={(lat, lng) => updatePhotoPosition(i, lat, lng)}
                   />
                   <div className="flex items-center gap-2">
