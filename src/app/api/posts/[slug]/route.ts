@@ -26,7 +26,7 @@ export async function PUT(
 
   try {
     await updatePost(slug, data);
-    revalidatePostPages();
+    revalidatePostPages(slug);
     return NextResponse.json({ slug });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -46,7 +46,7 @@ export async function DELETE(
 
   try {
     await deletePost(slug);
-    revalidatePostPages();
+    revalidatePostPages(slug);
     return NextResponse.json({ slug });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

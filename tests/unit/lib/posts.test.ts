@@ -14,6 +14,14 @@ vi.mock('fs', () => ({
   mkdirSync: vi.fn(),
 }));
 
+// unstable_cache is called at module load time to wrap the blob URL lookup;
+// pass through unchanged since these tests never exercise the blob path.
+vi.mock('next/cache', () => ({
+  unstable_cache: (fn: unknown) => fn,
+  revalidateTag: vi.fn(),
+  revalidatePath: vi.fn(),
+}));
+
 import { getAllPosts, getPublishedPosts, getPostBySlug } from '@/lib/posts';
 import type { Post } from '@/lib/posts';
 

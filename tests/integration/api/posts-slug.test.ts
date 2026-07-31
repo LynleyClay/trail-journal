@@ -8,9 +8,9 @@ vi.mock('@/lib/posts', () => ({
   getAllPosts: vi.fn().mockResolvedValue([{ slug: 'test-hike-2026-06', title: 'Test Hike', published: false }]),
 }));
 
-// revalidatePath requires a live Next.js request context that isn't present
-// when route handlers are invoked directly in tests.
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+// revalidatePath/revalidateTag require a live Next.js request context that
+// isn't present when route handlers are invoked directly in tests.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 
 import { PUT, DELETE } from '@/app/api/posts/[slug]/route';
 import { updatePost, deletePost } from '@/lib/posts';

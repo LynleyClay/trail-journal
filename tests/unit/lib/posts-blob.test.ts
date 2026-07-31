@@ -7,6 +7,14 @@ const { listMock, putMock } = vi.hoisted(() => ({
 
 vi.mock('@vercel/blob', () => ({ list: listMock, put: putMock }));
 
+// unstable_cache would otherwise cache the blob URL lookup across test
+// cases; pass through unchanged so each test's mocked list() result applies.
+vi.mock('next/cache', () => ({
+  unstable_cache: (fn: unknown) => fn,
+  revalidateTag: vi.fn(),
+  revalidatePath: vi.fn(),
+}));
+
 import { getPublishedPosts, createPost } from '@/lib/posts';
 import type { Post } from '@/lib/posts';
 

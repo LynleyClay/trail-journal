@@ -41,7 +41,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       published: typeof published === 'boolean' ? published : false,
       photos: Array.isArray(photos) ? photos : [],
     });
-    revalidatePostPages();
+    revalidatePostPages(slug);
     return NextResponse.json({ slug }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { unstable_cache } from 'next/cache';
 import { generateSlug } from './slug';
 
 export type Trail = 'PCT' | 'CDT' | 'AT';
@@ -79,16 +80,23 @@ function deleteBodyLocal(slug: string): void {
 
 // ---- Vercel Blob backend (used in production, where the filesystem is read-only) ----
 
-async function findBlobUrl(pathname: string): Promise<string | null> {
-  const { list } = await import('@vercel/blob');
-  const { blobs } = await list({ prefix: pathname, limit: 1 });
-  return blobs.find((b) => b.pathname === pathname)?.url ?? null;
-}
+// Blob URLs are stable (addRandomSuffix: false), so the lookup itself is
+// safe to cache — this avoids a `list()` call to Blob storage on every
+// single page view. Busted immediately on writes via revalidateTag.
+const findBlobUrl = unstable_cache(
+  async (pathname: string): Promise<string | null> => {
+    const { list } = await import('@vercel/blob');
+    const { blobs } = await list({ prefix: pathname, limit: 1 });
+    return blobs.find((b) => b.pathname === pathname)?.url ?? null;
+  },
+  ['blob-url-lookup'],
+  { revalidate: 60, tags: ['blob-urls'] }
+);
 
 async function readPostsDataBlob(): Promise<Post[]> {
   const url = await findBlobUrl(BLOB_DATA_PATH);
   if (!url) return [];
-  const res = await fetch(url, { cache: 'no-store' });
+  const res = await fetch(url, { next: { revalidate: 60, tags: ['posts-data'] } });
   return res.ok ? ((await res.json()) as Post[]) : [];
 }
 
@@ -105,7 +113,7 @@ async function writePostsDataBlob(posts: Post[]): Promise<void> {
 async function readBodyBlob(slug: string): Promise<string> {
   const url = await findBlobUrl(blobBodyPath(slug));
   if (!url) return '';
-  const res = await fetch(url, { cache: 'no-store' });
+  const res = await fetch(url, { next: { revalidate: 60, tags: [`post-body-${slug}`] } });
   return res.ok ? await res.text() : '';
 }
 
