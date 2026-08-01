@@ -1,18 +1,141 @@
 [
   {
-    "id": "the-approach-trail",
-    "slug": "the-approach-trail",
+    "id": "the-approach-trail-to-springer-mountain-2022-02",
+    "slug": "the-approach-trail-to-springer-mountain-2022-02",
     "title": "The Approach Trail to Springer Mountain",
     "date": "2022-02-28",
     "excerpt": "How do you possibly fathom walking 2,000 miles across 14 states",
-    "coverPhoto": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1781293838394-image-from-ios.jpeg",
+    "coverPhoto": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1782938925481-1781293838394-image-from-ios.jpeg",
     "trail": "AT",
     "published": true,
     "photos": [
       {
-        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1781293838394-image-from-ios.jpeg",
-        "lat": 34.56269712140934,
-        "lng": -84.24694061279298
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1782938925481-1781293838394-image-from-ios.jpeg",
+        "caption": "The Approach trail, Amicalola Falls",
+        "lat": 34.6252978589571,
+        "lng": -84.19373140576273
+      }
+    ]
+  },
+  {
+    "id": "gray-s-peak-to-argentine-spine-to-montezuma-colorado-2023-09",
+    "slug": "gray-s-peak-to-argentine-spine-to-montezuma-colorado-2023-09",
+    "title": "Gray's Peak to Argentine Spine to Montezuma, Colorado",
+    "date": "2023-09-10",
+    "excerpt": "That time I made a critical error and became the luckiest person in the world",
+    "coverPhoto": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783006821147-img_9187_original.jpg",
+    "trail": "CDT",
+    "published": true,
+    "photos": [
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783006821147-img_9187_original.jpg",
+        "caption": "Grays Peak",
+        "lat": 39.63319206567459,
+        "lng": -105.81777412221601
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783006897865-img_9199_original.jpg",
+        "caption": "Mount Edwards",
+        "lat": 39.63629878881033,
+        "lng": -105.79380181391438
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783006934778-img_9272_original.jpg",
+        "caption": "Argentine Spine",
+        "lat": 39.61904479640681,
+        "lng": -105.78533606382568
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783007003807-img_9330_original.jpg",
+        "caption": "Ghost town right past Montezuma",
+        "lat": 39.563816344915615,
+        "lng": -105.8607274783611
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783007161946-img_9410_original.jpg",
+        "caption": "My map in the road"
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783007183212-img_9412_original.jpg",
+        "caption": "My map in the road"
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783007203509-img_20230910_124220736_hdr_original.jpg",
+        "caption": "The school house in Montezuma, CO",
+        "lat": 39.58115025155498,
+        "lng": -105.86803509027114
+      }
+    ]
+  },
+  {
+    "id": "one-man-s-trash-is-another-man-s-treasure-2022-06",
+    "slug": "one-man-s-trash-is-another-man-s-treasure-2022-06",
+    "title": "One man\u2019s Trash is another man\u2019s treasure",
+    "date": "2022-06-07",
+    "excerpt": "A friend named Trash",
+    "coverPhoto": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783371940656-9d77b765-393d-47f7-8e75-970fb7d949c8_original.jpeg",
+    "trail": "AT",
+    "published": true,
+    "photos": [
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783371935009-img_9901_original.jpeg",
+        "lat": 40.538851525354666,
+        "lng": -76.08616229127063
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783371938295-img_9962_original.jpeg",
+        "lat": 40.80211542040426,
+        "lng": -75.56430583857382
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783371939916-img_9981_original.jpeg",
+        "lat": 40.82277777777778,
+        "lng": -75.42627777777778
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783371940656-9d77b765-393d-47f7-8e75-970fb7d949c8_original.jpeg"
+      }
+    ]
+  },
+  {
+    "id": "your-life-expands-and-contracts-in-proportion-to-your-courage-2022-04",
+    "slug": "your-life-expands-and-contracts-in-proportion-to-your-courage-2022-04",
+    "title": "Your life expands and contracts in proportion to your courage",
+    "date": "2022-04-28",
+    "excerpt": "My favorite trail angel",
+    "coverPhoto": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783372433890-img_8061_original.jpeg",
+    "trail": "AT",
+    "published": true,
+    "photos": [
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783372330428-img_1877_original.jpeg",
+        "lat": 36.814902777777775,
+        "lng": -81.17465277777778
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783372433890-img_8061_original.jpeg",
+        "lat": 36.65478888888889,
+        "lng": -81.52683333333333
+      }
+    ]
+  },
+  {
+    "id": "humbled-beginnings-2023-06",
+    "slug": "humbled-beginnings-2023-06",
+    "title": "Humbled Beginnings",
+    "date": "2023-06-28",
+    "excerpt": "\u201cThe trail of solitude\u201d",
+    "coverPhoto": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783372866592-img_1614_original.jpeg",
+    "trail": "CDT",
+    "published": true,
+    "photos": [
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783372866592-img_1614_original.jpeg",
+        "lat": 48.86448891012799,
+        "lng": -113.69099158015226
+      },
+      {
+        "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783372867998-c9b50904-7a5c-470e-b189-502d08da9194_original.jpeg"
       }
     ]
   }
