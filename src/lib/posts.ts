@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { unstable_cache } from 'next/cache';
+import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { generateSlug } from './slug';
+import { hasR2Store, r2Client, r2Bucket, r2PublicUrl } from './r2';
 
 export type Trail = 'PCT' | 'CDT' | 'AT';
 
@@ -39,14 +40,10 @@ export interface CreatePostInput {
 const DATA_FILE = path.join(process.cwd(), 'content', 'data', 'posts.json');
 const POSTS_DIR = path.join(process.cwd(), 'content', 'posts');
 
-const BLOB_DATA_PATH = 'data/posts.json';
-const blobBodyPath = (slug: string): string => `posts/${slug}.md`;
+const R2_DATA_KEY = 'data/posts.json';
+const r2BodyKey = (slug: string): string => `posts/${slug}.md`;
 
-function hasBlobStore(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
-}
-
-// ---- Local filesystem backend (used in dev / tests without a Blob token) ----
+// ---- Local filesystem backend (used in dev / tests without R2 configured) ----
 
 function readPostsDataLocal(): Post[] {
   if (!fs.existsSync(DATA_FILE)) return [];
@@ -78,82 +75,73 @@ function deleteBodyLocal(slug: string): void {
   if (fs.existsSync(bodyPath)) fs.unlinkSync(bodyPath);
 }
 
-// ---- Vercel Blob backend (used in production, where the filesystem is read-only) ----
+// ---- Cloudflare R2 backend (used in production, where the filesystem is read-only) ----
 
-// Blob URLs are stable (addRandomSuffix: false), so the lookup itself is
-// safe to cache — this avoids a `list()` call to Blob storage on every
-// single page view. Busted immediately on writes via revalidateTag.
-const findBlobUrl = unstable_cache(
-  async (pathname: string): Promise<string | null> => {
-    const { list } = await import('@vercel/blob');
-    const { blobs } = await list({ prefix: pathname, limit: 1 });
-    return blobs.find((b) => b.pathname === pathname)?.url ?? null;
-  },
-  ['blob-url-lookup'],
-  { revalidate: 60, tags: ['blob-urls'] }
-);
-
-async function readPostsDataBlob(): Promise<Post[]> {
-  const url = await findBlobUrl(BLOB_DATA_PATH);
-  if (!url) return [];
-  const res = await fetch(url, { next: { revalidate: 60, tags: ['posts-data'] } });
+// R2 object URLs are deterministic from the key alone (unlike Vercel Blob's
+// opaque URLs), so reads are a plain cached fetch — no lookup call needed.
+async function readPostsDataR2(): Promise<Post[]> {
+  const res = await fetch(r2PublicUrl(R2_DATA_KEY), { next: { revalidate: 60, tags: ['posts-data'] } });
   return res.ok ? ((await res.json()) as Post[]) : [];
 }
 
-async function writePostsDataBlob(posts: Post[]): Promise<void> {
-  const { put } = await import('@vercel/blob');
-  await put(BLOB_DATA_PATH, JSON.stringify(posts, null, 2), {
-    access: 'public',
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: 'application/json',
-  });
+async function writePostsDataR2(posts: Post[]): Promise<void> {
+  await r2Client().send(
+    new PutObjectCommand({
+      Bucket: r2Bucket(),
+      Key: R2_DATA_KEY,
+      Body: JSON.stringify(posts, null, 2),
+      ContentType: 'application/json',
+    })
+  );
 }
 
-async function readBodyBlob(slug: string): Promise<string> {
-  const url = await findBlobUrl(blobBodyPath(slug));
-  if (!url) return '';
-  const res = await fetch(url, { next: { revalidate: 60, tags: [`post-body-${slug}`] } });
+async function readBodyR2(slug: string): Promise<string> {
+  const res = await fetch(r2PublicUrl(r2BodyKey(slug)), {
+    next: { revalidate: 60, tags: [`post-body-${slug}`] },
+  });
   return res.ok ? await res.text() : '';
 }
 
-async function writeBodyBlob(slug: string, body: string): Promise<void> {
-  const { put } = await import('@vercel/blob');
-  await put(blobBodyPath(slug), body, {
-    access: 'public',
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: 'text/markdown',
-  });
+async function writeBodyR2(slug: string, body: string): Promise<void> {
+  await r2Client().send(
+    new PutObjectCommand({
+      Bucket: r2Bucket(),
+      Key: r2BodyKey(slug),
+      Body: body,
+      ContentType: 'text/markdown',
+    })
+  );
 }
 
-async function deleteBodyBlob(slug: string): Promise<void> {
-  const url = await findBlobUrl(blobBodyPath(slug));
-  if (!url) return;
-  const { del } = await import('@vercel/blob');
-  await del(url);
+async function deleteBodyR2(slug: string): Promise<void> {
+  await r2Client().send(
+    new DeleteObjectCommand({
+      Bucket: r2Bucket(),
+      Key: r2BodyKey(slug),
+    })
+  );
 }
 
 // ---- Storage-agnostic public API ----
 
 async function readPostsData(): Promise<Post[]> {
-  return hasBlobStore() ? readPostsDataBlob() : readPostsDataLocal();
+  return hasR2Store() ? readPostsDataR2() : readPostsDataLocal();
 }
 
 async function writePostsData(posts: Post[]): Promise<void> {
-  return hasBlobStore() ? writePostsDataBlob(posts) : writePostsDataLocal(posts);
+  return hasR2Store() ? writePostsDataR2(posts) : writePostsDataLocal(posts);
 }
 
 async function readBody(slug: string): Promise<string> {
-  return hasBlobStore() ? readBodyBlob(slug) : readBodyLocal(slug);
+  return hasR2Store() ? readBodyR2(slug) : readBodyLocal(slug);
 }
 
 async function writeBody(slug: string, body: string): Promise<void> {
-  return hasBlobStore() ? writeBodyBlob(slug, body) : writeBodyLocal(slug, body);
+  return hasR2Store() ? writeBodyR2(slug, body) : writeBodyLocal(slug, body);
 }
 
 async function deleteBody(slug: string): Promise<void> {
-  return hasBlobStore() ? deleteBodyBlob(slug) : deleteBodyLocal(slug);
+  return hasR2Store() ? deleteBodyR2(slug) : deleteBodyLocal(slug);
 }
 
 export async function getAllPosts(): Promise<Post[]> {

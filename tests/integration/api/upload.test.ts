@@ -17,17 +17,31 @@ vi.mock('fs', () => ({
   readFileSync: vi.fn(),
 }));
 
-const { putMock } = vi.hoisted(() => ({
-  putMock: vi.fn().mockResolvedValue({ url: 'https://example.public.blob.vercel-storage.com/photos/1-cover.jpg' }),
+const { sendMock, putObjectCommandMock } = vi.hoisted(() => ({
+  sendMock: vi.fn().mockResolvedValue({}),
+  // Regular function (not arrow) so it can be used as a constructor with `new`.
+  putObjectCommandMock: vi.fn(function (this: { input: unknown }, input: unknown) {
+    this.input = input;
+  }),
 }));
 
-vi.mock('@vercel/blob', () => ({ put: putMock }));
+vi.mock('@aws-sdk/client-s3', () => {
+  class MockS3Client {
+    send = sendMock;
+  }
+  return {
+    S3Client: MockS3Client,
+    PutObjectCommand: putObjectCommandMock,
+  };
+});
 
 import { POST } from '@/app/api/upload/route';
 
+const R2_ENV_VARS = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET_NAME', 'R2_PUBLIC_URL'];
+
 afterEach(() => {
   vi.clearAllMocks();
-  delete process.env.BLOB_READ_WRITE_TOKEN;
+  for (const key of R2_ENV_VARS) delete process.env[key];
 });
 
 function makeUploadRequest(
@@ -72,14 +86,22 @@ describe('POST /api/upload', () => {
     expect(res.status).toBe(413);
   });
 
-  it('uploads to Vercel Blob and returns its absolute URL when BLOB_READ_WRITE_TOKEN is set', async () => {
-    process.env.BLOB_READ_WRITE_TOKEN = 'test-token';
+  it('uploads to R2 and returns its deterministic public URL when configured', async () => {
+    process.env.R2_ACCOUNT_ID = 'test-account';
+    process.env.R2_ACCESS_KEY_ID = 'test-key';
+    process.env.R2_SECRET_ACCESS_KEY = 'test-secret';
+    process.env.R2_BUCKET_NAME = 'test-bucket';
+    process.env.R2_PUBLIC_URL = 'https://pub-test.r2.dev';
+
     const req = makeUploadRequest('cover.jpg', 'image/jpeg', 100);
     const res = await POST(req);
     expect(res.status).toBe(201);
     const json = (await res.json()) as { filename: string; url: string };
-    expect(json.url).toBe('https://example.public.blob.vercel-storage.com/photos/1-cover.jpg');
+    expect(json.url).toMatch(/^https:\/\/pub-test\.r2\.dev\/photos\/\d+-cover\.jpg$/);
     expect(json.filename).toBe(json.url);
-    expect(putMock).toHaveBeenCalled();
+    expect(sendMock).toHaveBeenCalled();
+    expect(putObjectCommandMock).toHaveBeenCalledWith(
+      expect.objectContaining({ Bucket: 'test-bucket', ContentType: 'image/jpeg' })
+    );
   });
 });

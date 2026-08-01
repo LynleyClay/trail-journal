@@ -25,14 +25,6 @@ vi.mock('fs', () => ({
   unlinkSync: unlinkSyncMock,
 }));
 
-// unstable_cache is called at module load time to wrap the blob URL lookup;
-// pass through unchanged since these tests never exercise the blob path.
-vi.mock('next/cache', () => ({
-  unstable_cache: (fn: unknown) => fn,
-  revalidateTag: vi.fn(),
-  revalidatePath: vi.fn(),
-}));
-
 import { createPost, updatePost, deletePost } from '@/lib/posts';
 import type { Post } from '@/lib/posts';
 
@@ -54,7 +46,6 @@ const setupRead = (posts: Post[]) => {
 
 afterEach(() => {
   vi.clearAllMocks();
-  delete process.env.BLOB_READ_WRITE_TOKEN;
 });
 
 describe('createPost', () => {

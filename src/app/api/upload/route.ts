@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { hasR2Store, r2Client, r2Bucket, r2PublicUrl } from '@/lib/r2';
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
@@ -8,10 +10,6 @@ const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 interface UploadResult {
   filename: string;
   url: string;
-}
-
-function hasBlobStore(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
 }
 
 function sanitizeFilename(name: string): string {
@@ -22,11 +20,18 @@ function sanitizeFilename(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-async function saveToBlob(safeName: string, buffer: Buffer, contentType: string): Promise<UploadResult> {
-  const { put } = await import('@vercel/blob');
-  const pathname = `photos/${Date.now()}-${safeName}`;
-  const blob = await put(pathname, buffer, { access: 'public', contentType });
-  return { filename: blob.url, url: blob.url };
+async function saveToR2(safeName: string, buffer: Buffer, contentType: string): Promise<UploadResult> {
+  const key = `photos/${Date.now()}-${safeName}`;
+  await r2Client().send(
+    new PutObjectCommand({
+      Bucket: r2Bucket(),
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    })
+  );
+  const url = r2PublicUrl(key);
+  return { filename: url, url };
 }
 
 function saveToLocal(slug: string, safeName: string, buffer: Buffer): UploadResult {
@@ -80,8 +85,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const safeName = sanitizeFilename(file.name);
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const result = hasBlobStore()
-    ? await saveToBlob(safeName, buffer, file.type)
+  const result = hasR2Store()
+    ? await saveToR2(safeName, buffer, file.type)
     : saveToLocal(slug, safeName, buffer);
 
   return NextResponse.json(result, { status: 201 });
