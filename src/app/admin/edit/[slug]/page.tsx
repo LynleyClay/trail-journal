@@ -30,6 +30,7 @@ export default async function AdminEditPostPage({ params }: PageProps) {
             url: photoUrl(post.slug, p.filename),
             previewUrl: photoUrl(post.slug, p.filename),
           })),
+          route: post.route,
         }}
       />
     </main>

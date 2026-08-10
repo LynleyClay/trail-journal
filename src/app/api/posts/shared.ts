@@ -10,6 +10,19 @@ export function validateDate(date: string): boolean {
   return !isNaN(d.getTime());
 }
 
+export function validateRoute(route: unknown): route is [number, number][] {
+  return (
+    Array.isArray(route) &&
+    route.every(
+      (point) =>
+        Array.isArray(point) &&
+        point.length === 2 &&
+        typeof point[0] === 'number' &&
+        typeof point[1] === 'number'
+    )
+  );
+}
+
 // The home page and map are statically prerendered, and Blob reads are
 // time-cached for cost, so writes to post data need to explicitly
 // invalidate both or readers keep seeing stale (or missing) content.

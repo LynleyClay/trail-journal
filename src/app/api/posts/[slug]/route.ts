@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updatePost, deletePost, getAllPosts } from '@/lib/posts';
-import { validateDate, revalidatePostPages } from '../shared';
+import { validateDate, validateRoute, revalidatePostPages } from '../shared';
 
 export async function PUT(
   request: NextRequest,
@@ -22,6 +22,9 @@ export async function PUT(
   const data = body as Record<string, unknown>;
   if (data['date'] !== undefined && (typeof data['date'] !== 'string' || !validateDate(data['date']))) {
     return NextResponse.json({ error: 'date must be a valid ISO date (YYYY-MM-DD)' }, { status: 400 });
+  }
+  if (data['route'] !== undefined && !validateRoute(data['route'])) {
+    return NextResponse.json({ error: 'route must be an array of [lat, lng] pairs' }, { status: 400 });
   }
 
   try {

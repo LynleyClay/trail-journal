@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPost } from '@/lib/posts';
 import type { Trail } from '@/lib/posts';
-import { validateDate, VALID_TRAILS, revalidatePostPages } from './shared';
+import { validateDate, validateRoute, VALID_TRAILS, revalidatePostPages } from './shared';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   let body: unknown;
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const data = body as Record<string, unknown>;
-  const { title, date, excerpt, body: postBody, trail, coverPhoto, published, photos } = data;
+  const { title, date, excerpt, body: postBody, trail, coverPhoto, published, photos, route } = data;
 
   if (!title || typeof title !== 'string') {
     return NextResponse.json({ error: 'title is required' }, { status: 400 });
@@ -29,6 +29,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (trail !== undefined && (typeof trail !== 'string' || !VALID_TRAILS.has(trail))) {
     return NextResponse.json({ error: 'trail must be PCT, CDT, or AT' }, { status: 400 });
   }
+  if (route !== undefined && !validateRoute(route)) {
+    return NextResponse.json({ error: 'route must be an array of [lat, lng] pairs' }, { status: 400 });
+  }
 
   try {
     const slug = await createPost({
@@ -40,6 +43,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       coverPhoto: typeof coverPhoto === 'string' ? coverPhoto : undefined,
       published: typeof published === 'boolean' ? published : false,
       photos: Array.isArray(photos) ? photos : [],
+      route: validateRoute(route) ? route : undefined,
     });
     revalidatePostPages(slug);
     return NextResponse.json({ slug }, { status: 201 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import type { FeatureCollection } from 'geojson';
 import type { Post } from '@/lib/posts';
 import { photoUrl } from '@/lib/photo-url';
@@ -24,16 +24,25 @@ interface LightboxState {
 // Fits the initial view to all trail lines so every trail is visible on
 // load regardless of screen size, rather than relying on a fixed zoom
 // that only happens to work at one viewport width.
-function FitAllTrails({ trailGeoJsons }: { trailGeoJsons: Record<string, FeatureCollection> }) {
+function FitAllTrails({
+  trailGeoJsons,
+  routes,
+}: {
+  trailGeoJsons: Record<string, FeatureCollection>;
+  routes: [number, number][][];
+}) {
   const map = useMap();
   useEffect(() => {
     const geoJsons = Object.values(trailGeoJsons);
-    if (geoJsons.length === 0) return;
+    if (geoJsons.length === 0 && routes.length === 0) return;
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const L = require('leaflet') as typeof import('leaflet');
     const bounds = L.latLngBounds([]);
     for (const geoJson of geoJsons) {
       bounds.extend(L.geoJSON(geoJson).getBounds());
+    }
+    for (const route of routes) {
+      bounds.extend(L.latLngBounds(route));
     }
     if (bounds.isValid()) {
       map.fitBounds(bounds, { padding: [20, 20] });
@@ -65,7 +74,10 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
         scrollWheelZoom
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
-        <FitAllTrails trailGeoJsons={trailGeoJsons} />
+        <FitAllTrails
+          trailGeoJsons={trailGeoJsons}
+          routes={posts.flatMap((post) => (post.route && post.route.length > 1 ? [post.route] : []))}
+        />
 
         {Object.entries(trailGeoJsons).map(([name, geoJson]) => (
           <GeoJSON
@@ -74,6 +86,16 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
             style={{ color: TRAIL_COLORS[name] ?? '#64748b', weight: 2, opacity: 0.7 }}
           />
         ))}
+
+        {posts.map((post) =>
+          post.route && post.route.length > 1 ? (
+            <Polyline
+              key={`${post.slug}-route`}
+              positions={post.route}
+              pathOptions={{ color: '#dc2626', weight: 3, opacity: 0.9 }}
+            />
+          ) : null
+        )}
 
         {posts.map((post) => (
           <Marker

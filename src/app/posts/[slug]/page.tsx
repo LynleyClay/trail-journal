@@ -45,7 +45,7 @@ export default async function TripReportPage({ params }: PageProps) {
   const gpsPhotos = post.photos.filter(
     (p) => typeof p.lat === 'number' && typeof p.lng === 'number'
   );
-  const showMap = trailGeoJson !== undefined || gpsPhotos.length > 0;
+  const showMap = trailGeoJson !== undefined || gpsPhotos.length > 0 || (post.route?.length ?? 0) > 0;
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 flex flex-col gap-8">
@@ -99,7 +99,7 @@ export default async function TripReportPage({ params }: PageProps) {
       {showMap && (
         <section>
           <h2 className="text-xl font-semibold text-stone-800 mb-4">On the Trail</h2>
-          <MiniMap trailGeoJson={trailGeoJson} photos={post.photos} />
+          <MiniMap trailGeoJson={trailGeoJson} photos={post.photos} route={post.route} />
         </section>
       )}
     </main>

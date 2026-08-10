@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FeatureCollection } from 'geojson';
 import type { Trail, Photo } from '@/lib/posts';
+import { parseGpx, simplifyRoute, GpxParseError } from '@/lib/gpx';
 
 const MarkdownEditor = dynamic(
   () => import('@/components/MarkdownEditor').then((m) => m.MarkdownEditor),
@@ -34,6 +35,7 @@ export interface PostFormInitialData {
   trail: Trail | '';
   coverPhoto: string;
   photos: UploadedPhoto[];
+  route?: [number, number][];
 }
 
 interface PostFormProps {
@@ -64,6 +66,8 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
   const [trailGeoJson, setTrailGeoJson] = useState<FeatureCollection | undefined>(undefined);
   const [photos, setPhotos] = useState<UploadedPhoto[]>(data.photos);
   const [coverPhoto, setCoverPhoto] = useState(data.coverPhoto);
+  const [route, setRoute] = useState<[number, number][] | undefined>(data.route);
+  const [gpxError, setGpxError] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -71,6 +75,7 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
   const [deleting, setDeleting] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const gpxInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!trail) {
@@ -162,6 +167,22 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
+  async function handleGpxUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setGpxError('');
+    try {
+      const text = await file.text();
+      const points = parseGpx(text);
+      setRoute(simplifyRoute(points));
+    } catch (err) {
+      setGpxError(err instanceof GpxParseError ? err.message : 'Could not read that GPX file.');
+    } finally {
+      if (gpxInputRef.current) gpxInputRef.current.value = '';
+    }
+  }
+
   function updatePhotoCaption(index: number, caption: string) {
     setPhotos((prev) =>
       prev.map((p, i) => (i === index ? { ...p, caption } : p))
@@ -210,6 +231,7 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
         lat,
         lng,
       })),
+      route,
     };
 
     try {
@@ -289,6 +311,7 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
                 setTrail('');
                 setPhotos([]);
                 setCoverPhoto('');
+                setRoute(undefined);
               }}
               className="px-5 py-2 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
             >
@@ -460,6 +483,35 @@ export function PostForm({ mode, slug, initialData }: PostFormProps) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* GPS Track */}
+      <div>
+        <p className="block text-sm font-medium text-stone-700 mb-2">GPS Track (optional)</p>
+        {route && route.length > 0 ? (
+          <div className="flex items-center gap-3 text-sm text-stone-600">
+            <span>Track loaded — {route.length} points.</span>
+            <button
+              type="button"
+              onClick={() => setRoute(undefined)}
+              className="text-red-600 hover:text-red-700 underline"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <label className="inline-flex items-center gap-2 px-4 py-2 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-50 transition-colors text-sm text-stone-700">
+            Upload GPX file
+            <input
+              ref={gpxInputRef}
+              type="file"
+              accept=".gpx"
+              className="sr-only"
+              onChange={handleGpxUpload}
+            />
+          </label>
+        )}
+        {gpxError && <p className="mt-1 text-sm text-red-600">{gpxError}</p>}
       </div>
 
       {/* Cover photo */}

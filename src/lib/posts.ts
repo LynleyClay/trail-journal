@@ -24,6 +24,7 @@ export interface Post {
   published: boolean;
   photos: Photo[];
   body?: string;
+  route?: [number, number][];
 }
 
 export interface CreatePostInput {
@@ -35,6 +36,7 @@ export interface CreatePostInput {
   coverPhoto?: string;
   published?: boolean;
   photos?: Photo[];
+  route?: [number, number][];
 }
 
 const DATA_FILE = path.join(process.cwd(), 'content', 'data', 'posts.json');
@@ -187,6 +189,7 @@ export async function createPost(data: CreatePostInput): Promise<string> {
     trail: data.trail,
     published: data.published ?? false,
     photos: data.photos ?? [],
+    route: data.route,
   };
 
   await writeBody(slug, data.body);
