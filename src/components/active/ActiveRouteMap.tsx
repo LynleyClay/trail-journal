@@ -102,9 +102,16 @@ type ActiveRouteMapProps = {
   gps: GpsPosition | null;
   defaultCenter: [number, number];
   trackGps: boolean;
+  useOfflineTiles?: boolean;
 };
 
-export function ActiveRouteMap({ route, gps, defaultCenter, trackGps }: ActiveRouteMapProps) {
+export function ActiveRouteMap({
+  route,
+  gps,
+  defaultCenter,
+  trackGps,
+  useOfflineTiles = false,
+}: ActiveRouteMapProps) {
   useEffect(() => {
     fixLeafletIcons();
   }, []);
@@ -126,7 +133,13 @@ export function ActiveRouteMap({ route, gps, defaultCenter, trackGps }: ActiveRo
 
   return (
     <MapContainer center={defaultCenter} zoom={6} className="h-full w-full" scrollWheelZoom>
-      <TileLayer attribution={TOPO_TILE_ATTRIBUTION} url={TOPO_TILE_URL} maxZoom={17} />
+      <TileLayer
+        attribution={TOPO_TILE_ATTRIBUTION}
+        url={TOPO_TILE_URL}
+        maxZoom={17}
+        crossOrigin="anonymous"
+        {...(useOfflineTiles ? { updateWhenIdle: true, keepBuffer: 4 } : {})}
+      />
       <FitRoute route={route} gps={gps} towns={towns} water={water} />
 
       {positions.length > 1 && (

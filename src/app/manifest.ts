@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: config.name,
     short_name: config.name,
     description: config.tagline,
-    start_url: '/',
+    start_url: '/map?tab=active',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#059669',

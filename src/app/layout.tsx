@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { readConfig } from '@/lib/config';
 import { SiteHeader } from '@/components/SiteHeader';
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 
 export const metadata: Metadata = {
   title: 'Trail Journal',
@@ -34,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="h-screen flex flex-col bg-white text-stone-900 antialiased overflow-y-auto">
+        <ServiceWorkerRegistration />
         <SiteHeader siteName={config.name} />
         {children}
       </body>
