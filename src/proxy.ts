@@ -1,15 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SESSION_COOKIE_NAME, isValidSession } from '@/lib/auth';
+import { isValidSession, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { verifyUserSession } from '@/lib/password';
+import { USER_ID_COOKIE, USER_SESSION_COOKIE } from '@/lib/user-session';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-const PUBLIC_PATHS = new Set(['/admin/login', '/api/login']);
+const PUBLIC_PATHS = new Set([
+  '/admin/login',
+  '/api/login',
+  '/api/auth/signup',
+  '/api/auth/login',
+  '/api/auth/logout',
+]);
 
-function isAuthenticated(request: NextRequest): boolean {
+function isAdminAuthenticated(request: NextRequest): boolean {
   return isValidSession(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 }
 
-// Reader-facing pages and reads are public. Only the admin UI and any
-// request that mutates content require a logged-in session.
+function isUserAuthenticated(request: NextRequest): boolean {
+  const userId = request.cookies.get(USER_ID_COOKIE)?.value;
+  const token = request.cookies.get(USER_SESSION_COOKIE)?.value;
+  return !!userId && verifyUserSession(userId, token);
+}
+
+function isAnyAuthenticated(request: NextRequest): boolean {
+  return isAdminAuthenticated(request) || isUserAuthenticated(request);
+}
+
+// Reader-facing pages and reads are public. Admin UI and content mutations require auth.
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
@@ -22,13 +39,13 @@ export function proxy(request: NextRequest): NextResponse {
   const isMutatingApi =
     pathname.startsWith('/api') && MUTATING_METHODS.has(request.method) && !isRoutesApi;
 
-  if (isAdminPage && !isAuthenticated(request)) {
+  if (isAdminPage && !isAdminAuthenticated(request)) {
     const loginUrl = new URL('/admin/login', request.url);
     loginUrl.searchParams.set('returnTo', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isMutatingApi && !isAuthenticated(request)) {
+  if (isMutatingApi && !isAnyAuthenticated(request)) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 

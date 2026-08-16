@@ -3,6 +3,7 @@ import * as path from 'path';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import type { Waypoint } from '@/lib/routes';
 import { hasR2Store, r2Client, r2Bucket, r2PublicUrl } from '@/lib/r2';
+import { getSiteOwnerUserId } from '@/lib/site-owner';
 
 export type RoutePoi = {
   id: string;
@@ -22,6 +23,7 @@ export type ActiveRoute = {
   status: 'active' | 'completed';
   resupply: RoutePoi[];
   water: RoutePoi[];
+  userId?: string;
 };
 
 export type CreateActiveRouteInput = {
@@ -30,6 +32,7 @@ export type CreateActiveRouteInput = {
   connectedTrailIds: string[];
   resupply: RoutePoi[];
   water: RoutePoi[];
+  userId: string;
 };
 
 const DATA_FILE = path.join(process.cwd(), 'content', 'data', 'active-routes.json');
@@ -70,21 +73,27 @@ async function writeR2(routes: ActiveRoute[]): Promise<void> {
 }
 
 async function readAll(): Promise<ActiveRoute[]> {
-  return hasR2Store() ? readR2() : readLocal();
+  const raw = hasR2Store() ? await readR2() : readLocal();
+  const ownerId = await getSiteOwnerUserId();
+  return raw.map((r) => ({ ...r, userId: r.userId ?? ownerId }));
 }
 
 async function writeAll(routes: ActiveRoute[]): Promise<void> {
   return hasR2Store() ? writeR2(routes) : writeLocal(routes);
 }
 
-export async function getActiveRoutes(): Promise<ActiveRoute[]> {
+export async function getActiveRoutes(userId?: string): Promise<ActiveRoute[]> {
   const routes = await readAll();
-  return routes.sort((a, b) => (a.approvedAt < b.approvedAt ? 1 : -1));
+  const filtered = userId ? routes.filter((r) => r.userId === userId) : routes;
+  return filtered.sort((a, b) => (a.approvedAt < b.approvedAt ? 1 : -1));
 }
 
-export async function getActiveRouteById(id: string): Promise<ActiveRoute | null> {
+export async function getActiveRouteById(id: string, userId?: string): Promise<ActiveRoute | null> {
   const routes = await readAll();
-  return routes.find((r) => r.id === id) ?? null;
+  const route = routes.find((r) => r.id === id) ?? null;
+  if (!route) return null;
+  if (userId && route.userId !== userId) return null;
+  return route;
 }
 
 export async function createActiveRoute(input: CreateActiveRouteInput): Promise<ActiveRoute> {
@@ -98,16 +107,19 @@ export async function createActiveRoute(input: CreateActiveRouteInput): Promise<
     status: 'active',
     resupply: input.resupply,
     water: input.water,
+    userId: input.userId,
   };
   routes.push(route);
   await writeAll(routes);
   return route;
 }
 
-export async function deleteActiveRoute(id: string): Promise<boolean> {
+export async function deleteActiveRoute(id: string, userId?: string): Promise<boolean> {
   const routes = await readAll();
+  const target = routes.find((r) => r.id === id);
+  if (!target) return false;
+  if (userId && target.userId !== userId) return false;
   const next = routes.filter((r) => r.id !== id);
-  if (next.length === routes.length) return false;
   await writeAll(next);
   return true;
 }
@@ -116,12 +128,14 @@ export async function updateActiveRoutePois(
   id: string,
   resupply: RoutePoi[],
   water: RoutePoi[],
+  userId?: string,
 ): Promise<ActiveRoute | null> {
   const routes = await readAll();
   const idx = routes.findIndex((r) => r.id === id);
   if (idx < 0) return null;
   const existing = routes[idx];
   if (!existing) return null;
+  if (userId && existing.userId !== userId) return null;
   routes[idx] = { ...existing, resupply, water };
   await writeAll(routes);
   return routes[idx] ?? null;
@@ -130,12 +144,14 @@ export async function updateActiveRoutePois(
 export async function updateActiveRouteStatus(
   id: string,
   status: ActiveRoute['status'],
+  userId?: string,
 ): Promise<ActiveRoute | null> {
   const routes = await readAll();
   const idx = routes.findIndex((r) => r.id === id);
   if (idx < 0) return null;
   const existing = routes[idx];
   if (!existing) return null;
+  if (userId && existing.userId !== userId) return null;
   routes[idx] = { ...existing, status };
   await writeAll(routes);
   return routes[idx] ?? null;

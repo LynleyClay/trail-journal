@@ -1,6 +1,10 @@
 {
   "name": "Trail Journal",
   "tagline": "Stories and lessons from long trails.",
+  "siteOwner": {
+    "username": "lynley",
+    "displayName": "Lynley"
+  },
   "map": {
     "defaultCenter": [39.5, -98.0],
     "defaultZoom": 4

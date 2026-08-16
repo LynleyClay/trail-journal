@@ -3,6 +3,8 @@ import * as path from 'path';
 import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { generateSlug } from './slug';
 import { hasR2Store, r2Client, r2Bucket, r2PublicUrl } from './r2';
+import { getSiteOwnerUserId } from './site-owner';
+import { getFollowingIds } from './follows';
 
 export type Trail = 'PCT' | 'CDT' | 'AT';
 
@@ -25,6 +27,7 @@ export interface Post {
   photos: Photo[];
   body?: string;
   route?: [number, number][];
+  userId?: string;
 }
 
 export interface CreatePostInput {
@@ -37,6 +40,7 @@ export interface CreatePostInput {
   published?: boolean;
   photos?: Photo[];
   route?: [number, number][];
+  userId: string;
 }
 
 const DATA_FILE = path.join(process.cwd(), 'content', 'data', 'posts.json');
@@ -126,8 +130,18 @@ async function deleteBodyR2(slug: string): Promise<void> {
 
 // ---- Storage-agnostic public API ----
 
+async function normalizePosts(posts: Post[]): Promise<Post[]> {
+  const ownerId = await getSiteOwnerUserId();
+  return posts.map((p) => ({ ...p, userId: p.userId ?? ownerId }));
+}
+
+function sortPublished(posts: Post[]): Post[] {
+  return posts.filter((p) => p.published).sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
 async function readPostsData(): Promise<Post[]> {
-  return hasR2Store() ? readPostsDataR2() : readPostsDataLocal();
+  const raw = hasR2Store() ? await readPostsDataR2() : readPostsDataLocal();
+  return normalizePosts(raw);
 }
 
 async function writePostsData(posts: Post[]): Promise<void> {
@@ -152,7 +166,26 @@ export async function getAllPosts(): Promise<Post[]> {
 
 export async function getPublishedPosts(): Promise<Post[]> {
   const posts = await readPostsData();
-  return posts.filter((p) => p.published).sort((a, b) => (a.date < b.date ? 1 : -1));
+  return sortPublished(posts);
+}
+
+export async function getPublishedPostsForUser(userId: string): Promise<Post[]> {
+  const posts = await readPostsData();
+  return sortPublished(posts.filter((p) => p.userId === userId));
+}
+
+export async function getPublishedPostsForFollowing(followerId: string): Promise<Post[]> {
+  const followingIds = await getFollowingIds(followerId);
+  if (followingIds.length === 0) return [];
+  const posts = await readPostsData();
+  return sortPublished(posts.filter((p) => p.userId && followingIds.includes(p.userId)));
+}
+
+export async function getPublishedPostsForUsername(username: string): Promise<Post[]> {
+  const { getUserByUsername } = await import('./users');
+  const user = await getUserByUsername(username);
+  if (!user) return [];
+  return getPublishedPostsForUser(user.id);
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
@@ -190,6 +223,7 @@ export async function createPost(data: CreatePostInput): Promise<string> {
     published: data.published ?? false,
     photos: data.photos ?? [],
     route: data.route,
+    userId: data.userId,
   };
 
   await writeBody(slug, data.body);

@@ -15,7 +15,8 @@
         "lat": 34.6252978589571,
         "lng": -84.19373140576273
       }
-    ]
+    ],
+    "userId": "user-lynley"
   },
   {
     "id": "gray-s-peak-to-argentine-spine-to-montezuma-colorado-2023-09",
@@ -65,12 +66,13 @@
         "lat": 39.58115025155498,
         "lng": -105.86803509027114
       }
-    ]
+    ],
+    "userId": "user-lynley"
   },
   {
     "id": "one-man-s-trash-is-another-man-s-treasure-2022-06",
     "slug": "one-man-s-trash-is-another-man-s-treasure-2022-06",
-    "title": "One man\u2019s Trash is another man\u2019s treasure",
+    "title": "One man’s Trash is another man’s treasure",
     "date": "2022-06-07",
     "excerpt": "A friend named Trash",
     "coverPhoto": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783371940656-9d77b765-393d-47f7-8e75-970fb7d949c8_original.jpeg",
@@ -95,7 +97,8 @@
       {
         "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783371940656-9d77b765-393d-47f7-8e75-970fb7d949c8_original.jpeg"
       }
-    ]
+    ],
+    "userId": "user-lynley"
   },
   {
     "id": "your-life-expands-and-contracts-in-proportion-to-your-courage-2022-04",
@@ -117,14 +120,15 @@
         "lat": 36.65478888888889,
         "lng": -81.52683333333333
       }
-    ]
+    ],
+    "userId": "user-lynley"
   },
   {
     "id": "humbled-beginnings-2023-06",
     "slug": "humbled-beginnings-2023-06",
     "title": "Humbled Beginnings",
     "date": "2023-06-28",
-    "excerpt": "\u201cThe trail of solitude\u201d",
+    "excerpt": "“The trail of solitude”",
     "coverPhoto": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783372866592-img_1614_original.jpeg",
     "trail": "CDT",
     "published": true,
@@ -137,6 +141,7 @@
       {
         "filename": "https://pub-91eeb7e579894cb987174cd2e43e92c5.r2.dev/photos/1783372867998-c9b50904-7a5c-470e-b189-502d08da9194_original.jpeg"
       }
-    ]
+    ],
+    "userId": "user-lynley"
   }
 ]

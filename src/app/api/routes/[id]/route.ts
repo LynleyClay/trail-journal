@@ -7,13 +7,15 @@ import {
   updateActiveRouteStatus,
 } from '@/lib/active-routes';
 import { fetchRoutePois } from '@/lib/overpass';
+import { getRoutesUserId } from '@/lib/routes-user';
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
+  const userId = await getRoutesUserId(request);
   const { id } = await context.params;
-  const ok = await deleteActiveRoute(id);
+  const ok = await deleteActiveRoute(id, userId);
   if (!ok) {
     return NextResponse.json({ error: 'Route not found' }, { status: 404 });
   }
@@ -25,6 +27,7 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
+  const userId = await getRoutesUserId(request);
   const { id } = await context.params;
   let body: unknown;
   try {
@@ -38,13 +41,13 @@ export async function PATCH(
   const refreshPois = data.refreshPois === true;
 
   if (refreshPois) {
-    const existing = await getActiveRouteById(id);
+    const existing = await getActiveRouteById(id, userId);
     if (!existing) {
       return NextResponse.json({ error: 'Route not found' }, { status: 404 });
     }
     try {
       const pois = await fetchRoutePois(existing.waypoints);
-      const route = await updateActiveRoutePois(id, pois.resupply, pois.water);
+      const route = await updateActiveRoutePois(id, pois.resupply, pois.water, userId);
       revalidateTag('active-routes-data', { expire: 0 });
       return NextResponse.json({ route });
     } catch (err) {
@@ -60,7 +63,7 @@ export async function PATCH(
     );
   }
 
-  const route = await updateActiveRouteStatus(id, status);
+  const route = await updateActiveRouteStatus(id, status, userId);
   if (!route) {
     return NextResponse.json({ error: 'Route not found' }, { status: 404 });
   }

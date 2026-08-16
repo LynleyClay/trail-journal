@@ -14,6 +14,14 @@ vi.mock('fs', () => ({
   mkdirSync: vi.fn(),
 }));
 
+vi.mock('@/lib/site-owner', () => ({
+  getSiteOwnerUserId: vi.fn().mockResolvedValue('user-lynley'),
+}));
+
+vi.mock('@/lib/follows', () => ({
+  getFollowingIds: vi.fn().mockResolvedValue([]),
+}));
+
 import { getAllPosts, getPublishedPosts, getPostBySlug } from '@/lib/posts';
 import type { Post } from '@/lib/posts';
 
@@ -35,7 +43,7 @@ const setupMocks = (posts: Post[], bodies: Record<string, string> = {}) => {
   readFileSyncMock.mockImplementation((filePath: unknown) => {
     const p = String(filePath);
     if (p.endsWith('posts.json')) return JSON.stringify(posts);
-    const slugMatch = /\/posts\/([^/]+)\.md$/.exec(p);
+    const slugMatch = /[/\\]posts[/\\]([^/\\]+)\.md$/.exec(p);
     if (slugMatch?.[1]) return bodies[slugMatch[1]] ?? '# Default body';
     throw new Error(`Unexpected readFileSync: ${p}`);
   });

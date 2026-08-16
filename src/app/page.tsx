@@ -1,10 +1,10 @@
-import { getPublishedPosts } from '@/lib/posts';
+import { getDefaultJournalPosts } from '@/lib/default-journal';
 import { readConfig } from '@/lib/config';
 import { PostCard } from '@/components/PostCard';
 
 export default async function HomePage() {
   const config = readConfig();
-  const posts = await getPublishedPosts();
+  const posts = await getDefaultJournalPosts();
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">

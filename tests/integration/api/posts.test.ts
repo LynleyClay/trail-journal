@@ -15,6 +15,10 @@ vi.mock('@/lib/posts', () => ({
 // isn't present when route handlers are invoked directly in tests.
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 
+vi.mock('@/lib/auth-session', () => ({
+  getAuthorUserId: vi.fn().mockResolvedValue('user-test'),
+}));
+
 import { POST } from '@/app/api/posts/route';
 
 afterEach(() => vi.clearAllMocks());

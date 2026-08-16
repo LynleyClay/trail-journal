@@ -4,6 +4,10 @@ import * as path from 'path';
 export interface SiteConfig {
   name: string;
   tagline: string;
+  siteOwner: {
+    username: string;
+    displayName: string;
+  };
   map: {
     defaultCenter: [number, number];
     defaultZoom: number;

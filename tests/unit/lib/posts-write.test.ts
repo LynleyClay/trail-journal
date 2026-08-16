@@ -25,6 +25,14 @@ vi.mock('fs', () => ({
   unlinkSync: unlinkSyncMock,
 }));
 
+vi.mock('@/lib/site-owner', () => ({
+  getSiteOwnerUserId: vi.fn().mockResolvedValue('user-lynley'),
+}));
+
+vi.mock('@/lib/follows', () => ({
+  getFollowingIds: vi.fn().mockResolvedValue([]),
+}));
+
 import { createPost, updatePost, deletePost } from '@/lib/posts';
 import type { Post } from '@/lib/posts';
 
@@ -57,6 +65,7 @@ describe('createPost', () => {
       excerpt: 'A quick test.',
       body: '# Test Hike\n\nGreat hike.',
       published: false,
+      userId: 'user-test',
     });
     expect(slug).toBe('test-hike-2026-06');
     expect(writeFileSyncMock).toHaveBeenCalled();
@@ -70,6 +79,7 @@ describe('createPost', () => {
       date: '2026-06-01',
       excerpt: 'Another.',
       body: '# Second',
+      userId: 'user-test',
     });
     expect(slug).toBe('test-hike-2026-06-2');
   });

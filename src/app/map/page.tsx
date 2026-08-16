@@ -1,13 +1,20 @@
 import { Suspense } from 'react';
-import { getPublishedPosts } from '@/lib/posts';
 import { readConfig } from '@/lib/config';
-import { loadTrailGeoJsons } from '@/lib/trail-geojson';
+import { getPublishedPostsForFollowing, getPublishedPostsForUser } from '@/lib/posts';
+import { getDefaultJournalPosts } from '@/lib/default-journal';
+import { loadTrailGeoJsons, loadTrailGeoJsonsForUser } from '@/lib/trail-geojson';
+import { getCurrentUser } from '@/lib/user-session';
 import MapPageTabs from '@/components/map/MapPageTabsLoader';
 
 export default async function MapPage() {
   const config = readConfig();
-  const posts = await getPublishedPosts();
-  const trailGeoJsons = loadTrailGeoJsons();
+  const user = await getCurrentUser();
+
+  const myPosts = user ? await getPublishedPostsForUser(user.id) : await getDefaultJournalPosts();
+  const friendsPosts = user ? await getPublishedPostsForFollowing(user.id) : [];
+  const trailGeoJsons = user
+    ? loadTrailGeoJsonsForUser(user.trailsCompleted)
+    : loadTrailGeoJsons();
 
   return (
     <Suspense
@@ -18,10 +25,12 @@ export default async function MapPage() {
       }
     >
       <MapPageTabs
-        posts={posts}
+        myPosts={myPosts}
+        friendsPosts={friendsPosts}
         trailGeoJsons={trailGeoJsons}
         defaultCenter={config.map.defaultCenter}
         defaultZoom={config.map.defaultZoom}
+        isLoggedIn={!!user}
       />
     </Suspense>
   );

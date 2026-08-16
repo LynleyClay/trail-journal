@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPost } from '@/lib/posts';
 import type { Trail } from '@/lib/posts';
+import { getAuthorUserId } from '@/lib/auth-session';
 import { validateDate, validateRoute, VALID_TRAILS, revalidatePostPages } from './shared';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const userId = await getAuthorUserId(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -44,6 +50,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       published: typeof published === 'boolean' ? published : false,
       photos: Array.isArray(photos) ? photos : [],
       route: validateRoute(route) ? route : undefined,
+      userId,
     });
     revalidatePostPages(slug);
     return NextResponse.json({ slug }, { status: 201 });

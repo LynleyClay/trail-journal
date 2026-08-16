@@ -35,6 +35,14 @@ vi.mock('fs', () => ({
   unlinkSync: vi.fn(),
 }));
 
+vi.mock('@/lib/site-owner', () => ({
+  getSiteOwnerUserId: vi.fn().mockResolvedValue('user-lynley'),
+}));
+
+vi.mock('@/lib/follows', () => ({
+  getFollowingIds: vi.fn().mockResolvedValue([]),
+}));
+
 import { getPublishedPosts, createPost } from '@/lib/posts';
 import type { Post } from '@/lib/posts';
 
@@ -99,6 +107,7 @@ describe('posts.ts Cloudflare R2 backend', () => {
       excerpt: 'Stored in R2.',
       body: '# R2 Hike',
       published: true,
+      userId: 'user-test',
     });
 
     expect(slug).toBe('r2-hike-2026-06');

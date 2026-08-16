@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { createActiveRoute, getActiveRoutes } from '@/lib/active-routes';
 import type { Waypoint } from '@/lib/routes';
 import { fetchRoutePois } from '@/lib/overpass';
+import { getRoutesUserId } from '@/lib/routes-user';
 
 function validateWaypoints(raw: unknown): raw is Waypoint[] {
   if (!Array.isArray(raw) || raw.length < 2) return false;
@@ -17,12 +18,15 @@ function validateWaypoints(raw: unknown): raw is Waypoint[] {
   );
 }
 
-export async function GET(): Promise<NextResponse> {
-  const routes = await getActiveRoutes();
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const userId = await getRoutesUserId(request);
+  const routes = await getActiveRoutes(userId);
   return NextResponse.json({ routes });
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const userId = await getRoutesUserId(request);
+
   let body: unknown;
   try {
     body = await request.json();
@@ -59,6 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       connectedTrailIds: connectedTrailIds as string[],
       resupply,
       water,
+      userId,
     });
     revalidateTag('active-routes-data', { expire: 0 });
     return NextResponse.json({ route }, { status: 201 });
