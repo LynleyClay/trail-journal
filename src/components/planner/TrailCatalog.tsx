@@ -2,12 +2,14 @@
 
 import type { LongTrail } from '@/lib/long-trails';
 import { TRAIL_REGIONS } from '@/lib/long-trails';
+import { hasTrailGuide } from '@/lib/trail-guides';
 
 type Props = {
   trails: LongTrail[];
   connectedIds: string[];
+  selectedId: string | null;
   highlightedId: string | null;
-  onConnect: (id: string) => void;
+  onSelect: (id: string) => void;
   onHover: (id: string | null) => void;
   filter: string;
   onFilterChange: (value: string) => void;
@@ -16,8 +18,9 @@ type Props = {
 export function TrailCatalog({
   trails,
   connectedIds,
+  selectedId,
   highlightedId,
-  onConnect,
+  onSelect,
   onHover,
   filter,
   onFilterChange,
@@ -33,7 +36,7 @@ export function TrailCatalog({
   });
 
   return (
-    <div className="flex flex-col gap-3 min-h-0 flex-1">
+    <div className="flex flex-col gap-3 pb-2">
       <input
         className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         type="search"
@@ -43,7 +46,7 @@ export function TrailCatalog({
         aria-label="Search long trails"
       />
 
-      <div className="overflow-y-auto flex-1 min-h-0 -mx-1 px-1">
+      <div className="space-y-4">
         {TRAIL_REGIONS.map((region) => {
           const group = filtered.filter((t) => t.region === region);
           if (group.length === 0) return null;
@@ -56,18 +59,21 @@ export function TrailCatalog({
                 {group.map((trail) => {
                   const connected = connectedIds.includes(trail.id);
                   const order = connected ? connectedIds.indexOf(trail.id) + 1 : null;
+                  const isSelected = selectedId === trail.id;
                   return (
                     <li key={trail.id}>
                       <button
                         type="button"
                         className={`w-full flex items-center gap-2 rounded-lg border px-2 py-2 text-left text-sm transition-colors ${
-                          connected
-                            ? 'border-emerald-300 bg-emerald-50'
-                            : highlightedId === trail.id
-                              ? 'border-stone-400 bg-stone-50'
-                              : 'border-stone-200 bg-white hover:bg-stone-50'
+                          isSelected
+                            ? 'border-amber-400 bg-amber-50'
+                            : connected
+                              ? 'border-emerald-300 bg-emerald-50'
+                              : highlightedId === trail.id
+                                ? 'border-stone-400 bg-stone-50'
+                                : 'border-stone-200 bg-white hover:bg-stone-50'
                         }`}
-                        onClick={() => onConnect(trail.id)}
+                        onClick={() => onSelect(trail.id)}
                         onMouseEnter={() => onHover(trail.id)}
                         onMouseLeave={() => onHover(null)}
                       >
@@ -76,10 +82,18 @@ export function TrailCatalog({
                           style={{ backgroundColor: trail.color }}
                         />
                         <span className="min-w-0 flex-1">
-                          <span className="font-semibold text-stone-900">
+                          <span className="font-semibold text-stone-900 inline-flex items-center gap-1">
                             {trail.abbrev}
+                            {hasTrailGuide(trail.id) && (
+                              <span
+                                className="text-[10px] font-medium text-amber-700 bg-amber-100 px-1 rounded"
+                                title="Trail guide available"
+                              >
+                                Guide
+                              </span>
+                            )}
                             {order !== null && (
-                              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white text-xs">
+                              <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white text-xs">
                                 {order}
                               </span>
                             )}

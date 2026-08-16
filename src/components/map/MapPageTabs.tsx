@@ -6,8 +6,9 @@ import type { FeatureCollection } from 'geojson';
 import type { Post } from '@/lib/posts';
 import MapView from '@/components/MapViewLoader';
 import RoutePlanner from '@/components/planner/RoutePlannerLoader';
+import MyCurrentRoutes from '@/components/active/MyCurrentRoutesLoader';
 
-type MapTab = 'journal' | 'planner';
+type MapTab = 'journal' | 'planner' | 'active';
 
 type MapPageTabsProps = {
   posts: Post[];
@@ -25,7 +26,23 @@ const TAB_COPY: Record<MapTab, { label: string; description: string }> = {
     label: 'Plan Routes',
     description: 'Stitch long trails together to plan future hikes.',
   },
+  active: {
+    label: 'My Current Routes',
+    description: 'Approved routes with resupply towns, water sources, and live GPS tracking.',
+  },
 };
+
+function tabFromParam(tab: string | null): MapTab {
+  if (tab === 'planner') return 'planner';
+  if (tab === 'active') return 'active';
+  return 'journal';
+}
+
+function tabUrl(tab: MapTab, routeId?: string): string {
+  if (tab === 'journal') return '/map';
+  if (tab === 'planner') return '/map?tab=planner';
+  return routeId ? `/map?tab=active&route=${routeId}` : '/map?tab=active';
+}
 
 export default function MapPageTabs({
   posts,
@@ -36,20 +53,26 @@ export default function MapPageTabs({
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const initialTab: MapTab = tabParam === 'planner' ? 'planner' : 'journal';
-  const [activeTab, setActiveTab] = useState<MapTab>(initialTab);
+  const routeParam = searchParams.get('route');
+  const [activeTab, setActiveTab] = useState<MapTab>(() => tabFromParam(tabParam));
 
   useEffect(() => {
-    setActiveTab(tabParam === 'planner' ? 'planner' : 'journal');
+    setActiveTab(tabFromParam(tabParam));
   }, [tabParam]);
 
   const switchTab = useCallback(
-    (tab: MapTab) => {
+    (tab: MapTab, routeId?: string) => {
       setActiveTab(tab);
-      const url = tab === 'planner' ? '/map?tab=planner' : '/map';
-      router.replace(url, { scroll: false });
+      router.replace(tabUrl(tab, routeId), { scroll: false });
     },
     [router],
+  );
+
+  const handleRouteApproved = useCallback(
+    (routeId: string) => {
+      switchTab('active', routeId);
+    },
+    [switchTab],
   );
 
   const copy = TAB_COPY[activeTab];
@@ -59,7 +82,11 @@ export default function MapPageTabs({
       <div className="border-b border-stone-200 bg-white px-4 py-3 shrink-0">
         <h1 className="text-lg font-bold text-stone-900">Trail Map</h1>
         <p className="text-sm text-stone-500 mb-3">{copy.description}</p>
-        <div className="flex gap-1 rounded-lg bg-stone-100 p-1 w-fit" role="tablist" aria-label="Map views">
+        <div
+          className="flex flex-wrap gap-1 rounded-lg bg-stone-100 p-1 w-fit"
+          role="tablist"
+          aria-label="Map views"
+        >
           {(Object.keys(TAB_COPY) as MapTab[]).map((tab) => (
             <button
               key={tab}
@@ -80,15 +107,22 @@ export default function MapPageTabs({
       </div>
 
       <div className="flex-1 flex flex-col min-h-0 relative">
-        {activeTab === 'journal' ? (
+        {activeTab === 'journal' && (
           <MapView
             posts={posts}
             trailGeoJsons={trailGeoJsons}
             defaultCenter={defaultCenter}
             defaultZoom={defaultZoom}
           />
-        ) : (
-          <RoutePlanner defaultCenter={defaultCenter} />
+        )}
+        {activeTab === 'planner' && (
+          <RoutePlanner
+            defaultCenter={defaultCenter}
+            onRouteApproved={handleRouteApproved}
+          />
+        )}
+        {activeTab === 'active' && (
+          <MyCurrentRoutes defaultCenter={defaultCenter} initialRouteId={routeParam} />
         )}
       </div>
     </div>

@@ -18,7 +18,9 @@ export function proxy(request: NextRequest): NextResponse {
   }
 
   const isAdminPage = pathname.startsWith('/admin');
-  const isMutatingApi = pathname.startsWith('/api') && MUTATING_METHODS.has(request.method);
+  const isRoutesApi = pathname.startsWith('/api/routes');
+  const isMutatingApi =
+    pathname.startsWith('/api') && MUTATING_METHODS.has(request.method) && !isRoutesApi;
 
   if (isAdminPage && !isAuthenticated(request)) {
     const loginUrl = new URL('/admin/login', request.url);

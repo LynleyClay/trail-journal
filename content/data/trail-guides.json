@@ -1,0 +1,818 @@
+[
+  {
+    "trailId": "at",
+    "synopsis": "Full northbound resupply plan for the Appalachian Trail (~2,190 mi), aligned with common thru-hiker guides (AWOL / Guthook / The Trek resupply surveys). These are the towns and trail-side stops hikers plan between—not every place near the corridor.",
+    "bestSeason": "March–October (northbound spring start most common)",
+    "typicalDuration": "5–7 months thru-hike",
+    "stops": [
+      {
+        "id": "springer",
+        "name": "Springer Mountain",
+        "lat": 34.6268,
+        "lng": -84.1938,
+        "kind": "highlight",
+        "mile": 0,
+        "note": "Southern terminus. Most northbounders start from Amicalola Falls Approach Trail."
+      },
+      {
+        "id": "neels-gap",
+        "name": "Neels Gap / Walasi-Yi",
+        "lat": 34.6878,
+        "lng": -83.9381,
+        "kind": "resupply",
+        "mile": 31,
+        "note": "Mountain Crossings—first outfitter, shakedown, and hot food."
+      },
+      {
+        "id": "hiawassee",
+        "name": "Hiawassee, GA",
+        "lat": 34.949,
+        "lng": -83.757,
+        "kind": "resupply",
+        "mile": 69,
+        "note": "First full grocery resupply for many NOBOs."
+      },
+      {
+        "id": "franklin",
+        "name": "Franklin, NC",
+        "lat": 35.182,
+        "lng": -83.381,
+        "kind": "resupply",
+        "mile": 109,
+        "note": "Outfitters, grocery, and lodging—standard early stop."
+      },
+      {
+        "id": "noc",
+        "name": "Nantahala Outdoor Center",
+        "lat": 35.331,
+        "lng": -83.585,
+        "kind": "resupply",
+        "mile": 137,
+        "note": "River gorge rest stop—restaurant, outfitter, and mail drops."
+      },
+      {
+        "id": "hot-springs",
+        "name": "Hot Springs, NC",
+        "lat": 35.892,
+        "lng": -82.831,
+        "kind": "resupply",
+        "mile": 274,
+        "note": "Trail runs Main Street—hostels, restaurants, hot springs."
+      },
+      {
+        "id": "erwin",
+        "name": "Erwin, TN",
+        "lat": 36.145,
+        "lng": -82.416,
+        "kind": "resupply",
+        "mile": 350,
+        "note": "Post-Smokies resupply—grocery, motels, Nolichucky area."
+      },
+      {
+        "id": "hampton",
+        "name": "Hampton, TN / Watauga Lake",
+        "lat": 36.285,
+        "lng": -82.176,
+        "kind": "resupply",
+        "mile": 423,
+        "note": "Lake-area resupply and hiker-friendly stores."
+      },
+      {
+        "id": "damascus",
+        "name": "Damascus, VA",
+        "lat": 36.631,
+        "lng": -81.784,
+        "kind": "resupply",
+        "mile": 469,
+        "note": "Trail Town USA—Trail Days, hostels, and social hub."
+      },
+      {
+        "id": "marion",
+        "name": "Marion, VA",
+        "lat": 36.835,
+        "lng": -81.514,
+        "kind": "resupply",
+        "mile": 552,
+        "note": "Full grocery and motels off trail."
+      },
+      {
+        "id": "atkins",
+        "name": "Atkins, VA",
+        "lat": 36.867,
+        "lng": -81.423,
+        "kind": "resupply",
+        "mile": 598,
+        "note": "Trail-side store and diner—popular short stop."
+      },
+      {
+        "id": "pearisburg",
+        "name": "Pearisburg, VA",
+        "lat": 37.326,
+        "lng": -80.735,
+        "kind": "resupply",
+        "mile": 635,
+        "note": "Grocery, pizza, and motels—common Virginia resupply."
+      },
+      {
+        "id": "bland",
+        "name": "Bland, VA",
+        "lat": 37.099,
+        "lng": -81.116,
+        "kind": "resupply",
+        "mile": 662,
+        "note": "Post office, grocery, and hiker shuttle hub."
+      },
+      {
+        "id": "daleville",
+        "name": "Daleville / Catawba, VA",
+        "lat": 37.406,
+        "lng": -79.912,
+        "kind": "resupply",
+        "mile": 726,
+        "note": "Mall, grocery, and motels—easy resupply before Roanoke area."
+      },
+      {
+        "id": "waynesboro",
+        "name": "Waynesboro, VA",
+        "lat": 38.068,
+        "lng": -78.889,
+        "kind": "resupply",
+        "mile": 863,
+        "note": "Shenandoah gateway—full town services and outfitter."
+      },
+      {
+        "id": "front-royal",
+        "name": "Front Royal, VA",
+        "lat": 38.918,
+        "lng": -78.194,
+        "kind": "resupply",
+        "mile": 978,
+        "note": "North end of Shenandoah—grocery, motels, and shuttles."
+      },
+      {
+        "id": "harpers-ferry",
+        "name": "Harpers Ferry, WV",
+        "lat": 38.325,
+        "lng": -77.739,
+        "kind": "resupply",
+        "mile": 1013,
+        "note": "Psychological halfway—ATC visitor center and mail drops."
+      },
+      {
+        "id": "boiling-springs",
+        "name": "Boiling Springs, PA",
+        "lat": 40.151,
+        "lng": -77.13,
+        "kind": "resupply",
+        "mile": 1115,
+        "note": "Lake-side town with grocery and tavern."
+      },
+      {
+        "id": "duncannon",
+        "name": "Duncannon, PA",
+        "lat": 40.393,
+        "lng": -77.031,
+        "kind": "resupply",
+        "mile": 1147,
+        "note": "Susquehanna crossing—grocery, pizza, and motels."
+      },
+      {
+        "id": "port-clinton",
+        "name": "Port Clinton, PA",
+        "lat": 40.582,
+        "lng": -75.872,
+        "kind": "resupply",
+        "mile": 1212,
+        "note": "Gateway to Pennsylvania rocks section."
+      },
+      {
+        "id": "palmerton",
+        "name": "Palmerton, PA",
+        "lat": 40.801,
+        "lng": -75.613,
+        "kind": "resupply",
+        "mile": 1295,
+        "note": "Superfund town with grocery and diner on trail."
+      },
+      {
+        "id": "delaware-water-gap",
+        "name": "Delaware Water Gap, PA",
+        "lat": 40.983,
+        "lng": -75.143,
+        "kind": "resupply",
+        "mile": 1320,
+        "note": "End of Pennsylvania—hostels and restaurants."
+      },
+      {
+        "id": "kent",
+        "name": "Kent, CT",
+        "lat": 41.724,
+        "lng": -73.477,
+        "kind": "resupply",
+        "mile": 1448,
+        "note": "Connecticut resupply with grocery and cafes."
+      },
+      {
+        "id": "great-barrington",
+        "name": "Great Barrington, MA",
+        "lat": 42.196,
+        "lng": -73.362,
+        "kind": "resupply",
+        "mile": 1540,
+        "note": "Berkshires resupply—grocery and outfitter."
+      },
+      {
+        "id": "hanover-nh",
+        "name": "Hanover, NH",
+        "lat": 43.702,
+        "lng": -72.289,
+        "kind": "resupply",
+        "mile": 1740,
+        "note": "Dartmouth college town—grocery, outfitter, and zero days."
+      },
+      {
+        "id": "gorham",
+        "name": "Gorham, NH",
+        "lat": 44.4,
+        "lng": -71.18,
+        "kind": "resupply",
+        "mile": 1820,
+        "note": "White Mountains gateway—motels and full grocery."
+      },
+      {
+        "id": "lincoln",
+        "name": "Lincoln / Franconia, NH",
+        "lat": 44.045,
+        "lng": -71.67,
+        "kind": "resupply",
+        "mile": 1850,
+        "note": "Franconia Notch area—outfitter and resupply."
+      },
+      {
+        "id": "pinkham",
+        "name": "Pinkham Notch",
+        "lat": 44.256,
+        "lng": -71.253,
+        "kind": "resupply",
+        "mile": 1880,
+        "note": "AMC visitor center—meals and supplies in the Whites."
+      },
+      {
+        "id": "andover",
+        "name": "Andover, ME",
+        "lat": 44.636,
+        "lng": -70.751,
+        "kind": "resupply",
+        "mile": 1950,
+        "note": "Southern Maine resupply before the big woods."
+      },
+      {
+        "id": "rangeley",
+        "name": "Rangeley, ME",
+        "lat": 44.967,
+        "lng": -70.647,
+        "kind": "resupply",
+        "mile": 2010,
+        "note": "Lakes region resupply and lodging."
+      },
+      {
+        "id": "caratunk",
+        "name": "Caratunk, ME",
+        "lat": 45.235,
+        "lng": -69.954,
+        "kind": "resupply",
+        "mile": 2045,
+        "note": "Kennet & Wynn's—river crossing and hiker services."
+      },
+      {
+        "id": "monson",
+        "name": "Monson, ME",
+        "lat": 45.297,
+        "lng": -69.384,
+        "kind": "resupply",
+        "mile": 2078,
+        "note": "Last town before the 100-Mile Wilderness—Shaw's Lodging."
+      },
+      {
+        "id": "millinocket",
+        "name": "Millinocket, ME",
+        "lat": 45.657,
+        "lng": -68.709,
+        "kind": "resupply",
+        "mile": 2190,
+        "note": "Katahdin gateway—motels, grocery, and Baxter shuttles."
+      },
+      {
+        "id": "katahdin",
+        "name": "Mount Katahdin",
+        "lat": 45.9044,
+        "lng": -68.9213,
+        "kind": "highlight",
+        "mile": 2190,
+        "note": "Northern terminus—Baxter State Park permit required."
+      }
+    ]
+  },
+  {
+    "trailId": "pct",
+    "synopsis": "Full resupply plan for the Pacific Crest Trail (~2,650 mi), based on Yogi’s PCT Handbook, Guthook, and Halfway Anywhere resupply survey patterns. Includes desert caches, Sierra exits, and Cascades stops hikers actually use.",
+    "bestSeason": "April–September (desert start, Sierra by June)",
+    "typicalDuration": "4–6 months thru-hike",
+    "stops": [
+      {
+        "id": "campo",
+        "name": "Campo (Southern terminus)",
+        "lat": 32.589,
+        "lng": -116.467,
+        "kind": "highlight",
+        "mile": 0,
+        "note": "Mexico border monument—traditional start."
+      },
+      {
+        "id": "mount-laguna",
+        "name": "Mount Laguna / Julian area",
+        "lat": 33.079,
+        "lng": -116.601,
+        "kind": "resupply",
+        "mile": 43,
+        "note": "Early desert resupply—Julian pie and Mount Laguna store."
+      },
+      {
+        "id": "warner-springs",
+        "name": "Warner Springs",
+        "lat": 33.282,
+        "lng": -116.634,
+        "kind": "resupply",
+        "mile": 110,
+        "note": "First major resupply—community center and trail angels."
+      },
+      {
+        "id": "idyllwild",
+        "name": "Idyllwild",
+        "lat": 33.74,
+        "lng": -116.718,
+        "kind": "resupply",
+        "mile": 179,
+        "note": "San Jacinto detour—outfitter, restaurants, zero days."
+      },
+      {
+        "id": "big-bear",
+        "name": "Big Bear Lake",
+        "lat": 34.244,
+        "lng": -116.911,
+        "kind": "resupply",
+        "mile": 266,
+        "note": "Full-service town after desert transition."
+      },
+      {
+        "id": "wrightwood",
+        "name": "Wrightwood",
+        "lat": 34.361,
+        "lng": -117.633,
+        "kind": "resupply",
+        "mile": 369,
+        "note": "Mountain town resupply before the Mojave."
+      },
+      {
+        "id": "agua-dulce",
+        "name": "Agua Dulce / Hikertown",
+        "lat": 34.496,
+        "lng": -118.326,
+        "kind": "resupply",
+        "mile": 454,
+        "note": "Desert oasis—trail angel stops and mail drops."
+      },
+      {
+        "id": "tehachapi",
+        "name": "Tehachapi",
+        "lat": 35.132,
+        "lng": -118.449,
+        "kind": "resupply",
+        "mile": 548,
+        "note": "Wind farm section resupply—grocery and motels."
+      },
+      {
+        "id": "kennedy-meadows-desert",
+        "name": "Kennedy Meadows (desert)",
+        "lat": 35.973,
+        "lng": -118.138,
+        "kind": "resupply",
+        "mile": 702,
+        "note": "Sierra gateway—bear canister, ice axe, and Sierra prep."
+      },
+      {
+        "id": "lone-pine",
+        "name": "Lone Pine / Independence",
+        "lat": 36.604,
+        "lng": -118.063,
+        "kind": "resupply",
+        "mile": 755,
+        "note": "Sierra exit for snow years or resupply before re-entry."
+      },
+      {
+        "id": "mammoth",
+        "name": "Mammoth Lakes",
+        "lat": 37.631,
+        "lng": -119.032,
+        "kind": "resupply",
+        "mile": 903,
+        "note": "Reds Meadow shuttle access—major Sierra resupply."
+      },
+      {
+        "id": "tuolumne",
+        "name": "Tuolumne Meadows",
+        "lat": 37.873,
+        "lng": -119.353,
+        "kind": "resupply",
+        "mile": 942,
+        "note": "Yosemite high country store—check seasonal hours."
+      },
+      {
+        "id": "south-lake-tahoe",
+        "name": "South Lake Tahoe",
+        "lat": 38.94,
+        "lng": -119.977,
+        "kind": "resupply",
+        "mile": 1093,
+        "note": "Post-Sierra resupply—grocery, lodging, trail angels."
+      },
+      {
+        "id": "truckee",
+        "name": "Truckee",
+        "lat": 39.328,
+        "lng": -120.183,
+        "kind": "resupply",
+        "mile": 1150,
+        "note": "Northern Sierra resupply and outfitter."
+      },
+      {
+        "id": "sierra-city",
+        "name": "Sierra City",
+        "lat": 39.573,
+        "lng": -120.636,
+        "kind": "resupply",
+        "mile": 1190,
+        "note": "Small town resupply before Northern California."
+      },
+      {
+        "id": "belden",
+        "name": "Belden Town",
+        "lat": 40.006,
+        "lng": -121.249,
+        "kind": "resupply",
+        "mile": 1280,
+        "note": "River resort resupply in the North Cascades approach."
+      },
+      {
+        "id": "chester",
+        "name": "Chester",
+        "lat": 40.306,
+        "lng": -121.233,
+        "kind": "resupply",
+        "mile": 1320,
+        "note": "Lake Almanor area grocery and motels."
+      },
+      {
+        "id": "burney",
+        "name": "Burney / Burney Falls",
+        "lat": 41.002,
+        "lng": -121.663,
+        "kind": "resupply",
+        "mile": 1420,
+        "note": "Falls-side resupply—grocery and trail magic."
+      },
+      {
+        "id": "castella",
+        "name": "Castella / Dunsmuir",
+        "lat": 41.211,
+        "lng": -122.272,
+        "kind": "resupply",
+        "mile": 1620,
+        "note": "I-5 corridor resupply in Shasta country."
+      },
+      {
+        "id": "etna",
+        "name": "Etna",
+        "lat": 41.457,
+        "lng": -122.898,
+        "kind": "resupply",
+        "mile": 1630,
+        "note": "Small-town resupply before Marble Mountains."
+      },
+      {
+        "id": "seiad",
+        "name": "Seiad Valley",
+        "lat": 41.842,
+        "lng": -123.228,
+        "kind": "resupply",
+        "mile": 1700,
+        "note": "CA/OR border area—store and pancake challenge."
+      },
+      {
+        "id": "ashland",
+        "name": "Ashland, OR",
+        "lat": 42.197,
+        "lng": -122.715,
+        "kind": "resupply",
+        "mile": 1720,
+        "note": "Oregon entry—full town services and Shakespeare town."
+      },
+      {
+        "id": "crater-lake",
+        "name": "Crater Lake / Mazama Village",
+        "lat": 42.868,
+        "lng": -122.168,
+        "kind": "resupply",
+        "mile": 1828,
+        "note": "Store and camp—side trail to the lake."
+      },
+      {
+        "id": "cascade-locks",
+        "name": "Cascade Locks",
+        "lat": 45.676,
+        "lng": -121.891,
+        "kind": "resupply",
+        "mile": 2145,
+        "note": "Bridge of the Gods—Washington entry and brew pub."
+      },
+      {
+        "id": "white-pass",
+        "name": "White Pass",
+        "lat": 46.637,
+        "lng": -121.39,
+        "kind": "resupply",
+        "mile": 2300,
+        "note": "Pass store and restaurant—Washington resupply."
+      },
+      {
+        "id": "snoqualmie",
+        "name": "Snoqualmie Pass",
+        "lat": 47.421,
+        "lng": -121.413,
+        "kind": "resupply",
+        "mile": 2400,
+        "note": "Pass-area store before North Cascades."
+      },
+      {
+        "id": "stehekin",
+        "name": "Stehekin",
+        "lat": 48.309,
+        "lng": -120.655,
+        "kind": "resupply",
+        "mile": 2580,
+        "note": "Boat-in town—bakery and resupply; plan ferry schedule."
+      },
+      {
+        "id": "canada-terminus",
+        "name": "Northern terminus (Canada)",
+        "lat": 49.0,
+        "lng": -120.8,
+        "kind": "highlight",
+        "mile": 2650,
+        "note": "Finish at the Canadian border."
+      },
+      {
+        "id": "scissors-crossing",
+        "name": "Scissors Crossing",
+        "lat": 33.067,
+        "lng": -116.465,
+        "kind": "water",
+        "mile": 77,
+        "note": "Critical desert cache—long carry to Warner Springs."
+      },
+      {
+        "id": "crabtree",
+        "name": "Crabtree Meadows",
+        "lat": 36.308,
+        "lng": -118.278,
+        "kind": "water",
+        "mile": 768,
+        "note": "Last easy water before high Sierra."
+      }
+    ]
+  },
+  {
+    "trailId": "cdt",
+    "synopsis": "Full resupply plan for the Continental Divide Trail (~3,100 mi), based on Yogi’s CDT Handbook and common thru-hiker mail-drop patterns. Spaced for typical 4–7 day carries in remote country.",
+    "bestSeason": "April–September (southbound or northbound, snow-dependent)",
+    "typicalDuration": "5–6 months thru-hike",
+    "stops": [
+      {
+        "id": "crazy-cook",
+        "name": "Crazy Cook Monument",
+        "lat": 31.467,
+        "lng": -108.2,
+        "kind": "highlight",
+        "mile": 0,
+        "note": "Southern terminus—shuttles from Lordsburg."
+      },
+      {
+        "id": "lordsburg",
+        "name": "Lordsburg, NM",
+        "lat": 32.35,
+        "lng": -108.709,
+        "kind": "resupply",
+        "mile": 85,
+        "note": "Bootheel shuttle hub—motels and grocery."
+      },
+      {
+        "id": "silver-city",
+        "name": "Silver City, NM",
+        "lat": 32.77,
+        "lng": -108.274,
+        "kind": "resupply",
+        "mile": 175,
+        "note": "Major early resupply before/after Gila alternates."
+      },
+      {
+        "id": "reserve",
+        "name": "Reserve, NM",
+        "lat": 33.713,
+        "lng": -108.759,
+        "kind": "resupply",
+        "mile": 250,
+        "note": "Catron County resupply after Gila section."
+      },
+      {
+        "id": "pie-town",
+        "name": "Pie Town, NM",
+        "lat": 34.471,
+        "lng": -108.131,
+        "kind": "resupply",
+        "mile": 340,
+        "note": "Legendary pie cafe—CDT culture stop."
+      },
+      {
+        "id": "grants",
+        "name": "Grants, NM",
+        "lat": 35.147,
+        "lng": -107.852,
+        "kind": "resupply",
+        "mile": 450,
+        "note": "Full grocery and motels on I-40 corridor."
+      },
+      {
+        "id": "chama",
+        "name": "Chama, NM",
+        "lat": 36.903,
+        "lng": -106.579,
+        "kind": "resupply",
+        "mile": 520,
+        "note": "Colorado border town before San Juan Mountains."
+      },
+      {
+        "id": "pagosa",
+        "name": "Pagosa Springs, CO",
+        "lat": 37.269,
+        "lng": -107.01,
+        "kind": "resupply",
+        "mile": 600,
+        "note": "Hot springs town—resupply after San Juans."
+      },
+      {
+        "id": "salida",
+        "name": "Salida, CO",
+        "lat": 38.535,
+        "lng": -105.992,
+        "kind": "resupply",
+        "mile": 800,
+        "note": "Arkansas River resupply and outfitter."
+      },
+      {
+        "id": "leadville",
+        "name": "Leadville, CO",
+        "lat": 39.251,
+        "lng": -106.292,
+        "kind": "resupply",
+        "mile": 850,
+        "note": "Highest city in the U.S.—full resupply."
+      },
+      {
+        "id": "twin-lakes",
+        "name": "Twin Lakes, CO",
+        "lat": 39.082,
+        "lng": -106.382,
+        "kind": "resupply",
+        "mile": 900,
+        "note": "Resupply store before Collegiate Peaks."
+      },
+      {
+        "id": "copper-mountain",
+        "name": "Copper Mountain / Frisco",
+        "lat": 39.502,
+        "lng": -106.152,
+        "kind": "resupply",
+        "mile": 950,
+        "note": "Summit County resupply—grocery and outfitter."
+      },
+      {
+        "id": "steamboat",
+        "name": "Steamboat Springs, CO",
+        "lat": 40.485,
+        "lng": -106.832,
+        "kind": "resupply",
+        "mile": 1050,
+        "note": "Ski town resupply in northern Colorado."
+      },
+      {
+        "id": "rawlins",
+        "name": "Rawlins, WY",
+        "lat": 41.791,
+        "lng": -107.239,
+        "kind": "resupply",
+        "mile": 1200,
+        "note": "Great Divide Basin gateway—long water carries ahead."
+      },
+      {
+        "id": "south-pass",
+        "name": "South Pass City / Lander",
+        "lat": 42.487,
+        "lng": -108.899,
+        "kind": "resupply",
+        "mile": 1250,
+        "note": "Basin exit resupply—Lander has full services."
+      },
+      {
+        "id": "pinedale",
+        "name": "Pinedale, WY",
+        "lat": 42.867,
+        "lng": -109.861,
+        "kind": "resupply",
+        "mile": 1300,
+        "note": "Wind River Range resupply and outfitter."
+      },
+      {
+        "id": "yellowstone",
+        "name": "Yellowstone NP (Old Faithful)",
+        "lat": 44.46,
+        "lng": -110.828,
+        "kind": "resupply",
+        "mile": 1400,
+        "note": "In-park store—plan for NP miles and regulations."
+      },
+      {
+        "id": "helena",
+        "name": "Helena, MT",
+        "lat": 46.589,
+        "lng": -112.039,
+        "kind": "resupply",
+        "mile": 1600,
+        "note": "Montana capital—full resupply and outfitter."
+      },
+      {
+        "id": "butte",
+        "name": "Butte, MT",
+        "lat": 46.004,
+        "lng": -112.535,
+        "kind": "resupply",
+        "mile": 1700,
+        "note": "Historic mining town—grocery and motels."
+      },
+      {
+        "id": "anaconda",
+        "name": "Anaconda, MT",
+        "lat": 46.128,
+        "lng": -112.947,
+        "kind": "resupply",
+        "mile": 1800,
+        "note": "Resupply before Bob Marshall / Glacier approach."
+      },
+      {
+        "id": "lincoln",
+        "name": "Lincoln, MT",
+        "lat": 47.062,
+        "lng": -112.681,
+        "kind": "resupply",
+        "mile": 1900,
+        "note": "Scenic resupply town in western Montana."
+      },
+      {
+        "id": "east-glacier",
+        "name": "East Glacier, MT",
+        "lat": 48.443,
+        "lng": -113.229,
+        "kind": "resupply",
+        "mile": 2100,
+        "note": "Glacier NP gateway—last major resupply."
+      },
+      {
+        "id": "waterton",
+        "name": "Waterton–Glacier terminus",
+        "lat": 49.0,
+        "lng": -113.9,
+        "kind": "highlight",
+        "mile": 3100,
+        "note": "Northern terminus at Canada border."
+      },
+      {
+        "id": "bootheel-cache",
+        "name": "Bootheel water caches",
+        "lat": 31.72,
+        "lng": -108.45,
+        "kind": "water",
+        "mile": 45,
+        "note": "Dry bootheel—check CDT water report and trail angels."
+      }
+    ]
+  }
+]

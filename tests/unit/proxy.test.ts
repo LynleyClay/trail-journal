@@ -67,6 +67,11 @@ describe('proxy', () => {
     expect(res.status).toBe(200);
   });
 
+  it('allows mutating /api/routes without a session (personal route planner)', () => {
+    expect(proxy(req('/api/routes', 'POST')).status).toBe(200);
+    expect(proxy(req('/api/routes/abc123', 'DELETE')).status).toBe(200);
+  });
+
   it('allows a public GET request to /api without a session', () => {
     process.env.ADMIN_USERNAME = 'owner';
     process.env.ADMIN_PASSWORD = 's3cret';

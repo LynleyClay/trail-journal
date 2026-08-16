@@ -18,6 +18,8 @@ import {
   type LongTrail,
 } from '@/lib/long-trails';
 import { TOPO_TILE_ATTRIBUTION, TOPO_TILE_URL, fixLeafletIcons } from '@/lib/leaflet-config';
+import { guideStopIcon } from '@/lib/map-poi-icons';
+import { getGuideStopsForTrails, getTrailGuide } from '@/lib/trail-guides';
 import 'leaflet/dist/leaflet.css';
 
 function blazeIcon(index: number, isEnd: boolean) {
@@ -155,7 +157,7 @@ function TrailLayer({
               <p className="text-sm mt-1">
                 {trail.termini[0]} → {trail.termini[1]}
               </p>
-              <p className="text-sm text-stone-500">{trail.miles.toLocaleString()} mi · click to connect</p>
+              <p className="text-sm text-stone-500">{trail.miles.toLocaleString()} mi · click to view guide</p>
             </Popup>
           </CircleMarker>
           <CircleMarker
@@ -182,6 +184,8 @@ type TrailMapProps = {
   addMode: boolean;
   connectMode: boolean;
   connectedTrailIds: string[];
+  selectedTrailId: string | null;
+  showGuideStops: boolean;
   highlightedTrailId: string | null;
   onAddWaypoint: (lat: number, lng: number) => void;
   onMoveWaypoint: (id: string, lat: number, lng: number) => void;
@@ -196,6 +200,8 @@ export function TrailMap({
   addMode,
   connectMode,
   connectedTrailIds,
+  selectedTrailId,
+  showGuideStops,
   highlightedTrailId,
   onAddWaypoint,
   onMoveWaypoint,
@@ -220,6 +226,17 @@ export function TrailMap({
     });
   }, [connectedTrailIds]);
 
+  const guideStopTrailIds = useMemo(() => {
+    const ids = new Set<string>(connectedTrailIds);
+    if (selectedTrailId && showGuideStops) ids.add(selectedTrailId);
+    return [...ids].filter((id) => getTrailGuide(id));
+  }, [connectedTrailIds, selectedTrailId, showGuideStops]);
+
+  const guideStops = useMemo(
+    () => getGuideStopsForTrails(guideStopTrailIds),
+    [guideStopTrailIds],
+  );
+
   return (
     <MapContainer
       center={defaultCenter}
@@ -236,11 +253,31 @@ export function TrailMap({
           key={trail.id}
           trail={trail}
           connected={connectedTrailIds.includes(trail.id)}
-          highlighted={highlightedTrailId === trail.id}
+          highlighted={highlightedTrailId === trail.id || selectedTrailId === trail.id}
           connectMode={connectMode}
           onSelect={onSelectTrail}
           onHover={onHoverTrail}
         />
+      ))}
+
+      {guideStops.map((stop) => (
+        <Marker
+          key={stop.id}
+          position={[stop.lat, stop.lng]}
+          icon={guideStopIcon(stop.kind)}
+          zIndexOffset={stop.kind === 'highlight' ? 1300 : stop.kind === 'resupply' ? 1200 : 1100}
+        >
+          <Popup>
+            <div className="min-w-[160px]">
+              <strong>{stop.name}</strong>
+              <p className="text-xs text-stone-500 mt-0.5 capitalize">{stop.kind}</p>
+              {stop.mile != null && (
+                <p className="text-xs text-stone-500">~Mile {stop.mile.toLocaleString()}</p>
+              )}
+              <p className="text-sm text-stone-600 mt-1">{stop.note}</p>
+            </div>
+          </Popup>
+        </Marker>
       ))}
 
       {positions.length > 1 && (
