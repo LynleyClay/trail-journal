@@ -70,6 +70,25 @@ function FitMap({
   return null;
 }
 
+function FlyToPoint({
+  lat,
+  lng,
+  zoom,
+  focusKey,
+}: {
+  lat: number;
+  lng: number;
+  zoom: number;
+  focusKey: number;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (focusKey === 0) return;
+    map.setView([lat, lng], zoom);
+  }, [map, lat, lng, zoom, focusKey]);
+  return null;
+}
+
 function ClickToAdd({
   enabled,
   onAdd,
@@ -192,6 +211,7 @@ type TrailMapProps = {
   onSelectTrail: (id: string) => void;
   onHoverTrail: (id: string | null) => void;
   fitKey: number;
+  focusPoint?: { lat: number; lng: number; key: number };
 };
 
 export function TrailMap({
@@ -208,6 +228,7 @@ export function TrailMap({
   onSelectTrail,
   onHoverTrail,
   fitKey,
+  focusPoint,
 }: TrailMapProps) {
   useEffect(() => {
     fixLeafletIcons();
@@ -246,6 +267,14 @@ export function TrailMap({
     >
       <TileLayer attribution={TOPO_TILE_ATTRIBUTION} url={TOPO_TILE_URL} maxZoom={17} />
       <FitMap waypoints={waypoints} fitKey={fitKey} showAllTrails={waypoints.length === 0} />
+      {focusPoint && focusPoint.key > 0 && (
+        <FlyToPoint
+          lat={focusPoint.lat}
+          lng={focusPoint.lng}
+          zoom={11}
+          focusKey={focusPoint.key}
+        />
+      )}
       <ClickToAdd enabled={addMode && !connectMode} onAdd={onAddWaypoint} />
 
       {sortedTrails.map((trail) => (

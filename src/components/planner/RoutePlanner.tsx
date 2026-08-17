@@ -12,7 +12,9 @@ import { TrailGuidePanel } from './TrailGuidePanel';
 import { RouteGuideInsight } from './RouteGuideInsight';
 import { TrailMap } from './TrailMap';
 import { WaypointList } from './WaypointList';
+import { LocationSearch } from './LocationSearch';
 import { getTrailGuide } from '@/lib/trail-guides';
+import type { GeocodeResult } from '@/lib/geocode';
 
 type BuildMode = 'connect' | 'pin';
 
@@ -32,6 +34,7 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
   const [highlightedTrailId, setHighlightedTrailId] = useState<string | null>(null);
   const [trailFilter, setTrailFilter] = useState('');
   const [fitKey, setFitKey] = useState(0);
+  const [mapFocus, setMapFocus] = useState({ lat: 0, lng: 0, key: 0 });
   const [status, setStatus] = useState<string | null>(
     'Click a trail to read its guide, then add it to your route.',
   );
@@ -98,18 +101,27 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
     setHighlightedTrailId(trailId);
   }, []);
 
-  const addWaypoint = useCallback((lat: number, lng: number) => {
+  const addWaypoint = useCallback((lat: number, lng: number, name?: string) => {
     const point: Waypoint = {
       id: uid(),
-      name: `Pin ${Date.now().toString().slice(-4)}`,
+      name: name?.trim() || `Pin ${Date.now().toString().slice(-4)}`,
       lat,
       lng,
     };
     setWaypoints((prev) => [...prev, point]);
     setSelectedId(point.id);
-    setStatus('Pinned a custom waypoint.');
+    setStatus(name ? `Added ${name} to your route.` : 'Pinned a custom waypoint.');
     setSidebarTab('route');
   }, []);
+
+  const addWaypointFromSearch = useCallback(
+    (place: GeocodeResult) => {
+      setMode('pin');
+      addWaypoint(place.lat, place.lng, place.name);
+      setMapFocus({ lat: place.lat, lng: place.lng, key: Date.now() });
+    },
+    [addWaypoint],
+  );
 
   const moveWaypoint = useCallback((id: string, lat: number, lng: number) => {
     setWaypoints((prev) => prev.map((w) => (w.id === id ? { ...w, lat, lng } : w)));
@@ -284,6 +296,8 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
               </button>
             </div>
 
+            <LocationSearch onSelect={addWaypointFromSearch} />
+
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -436,6 +450,7 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
             onSelectTrail={selectTrail}
             onHoverTrail={setHighlightedTrailId}
             fitKey={fitKey}
+            focusPoint={mapFocus}
           />
           <div
             className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-full bg-stone-900/85 text-white text-sm px-4 py-2 pointer-events-none"
@@ -447,7 +462,7 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
                 : highlightedTrailId
                   ? `${getTrailById(highlightedTrailId)?.name ?? ''} — click to view guide`
                   : 'Click a trail to view its guide'
-              : 'Click anywhere to place a waypoint'}
+              : 'Click the map or search for a place to add a waypoint'}
           </div>
         </section>
       </div>
