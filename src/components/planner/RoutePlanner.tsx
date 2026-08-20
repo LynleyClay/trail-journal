@@ -15,15 +15,23 @@ import { WaypointList } from './WaypointList';
 import { LocationSearch } from './LocationSearch';
 import { getTrailGuide } from '@/lib/trail-guides';
 import type { GeocodeResult } from '@/lib/geocode';
+import { ShowMapMenuButton } from '@/components/map/ShowMapMenuButton';
 
 type BuildMode = 'connect' | 'pin';
 
 type RoutePlannerProps = {
   defaultCenter: [number, number];
   onRouteApproved?: (routeId: string) => void;
+  mobileMenuOpen?: boolean;
+  onShowMobileMenu?: () => void;
 };
 
-export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePlannerProps) {
+export default function RoutePlanner({
+  defaultCenter,
+  onRouteApproved,
+  mobileMenuOpen = true,
+  onShowMobileMenu,
+}: RoutePlannerProps) {
   const [routeName, setRouteName] = useState('My route');
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [connectedTrailIds, setConnectedTrailIds] = useState<string[]>([]);
@@ -242,7 +250,11 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="border-b border-stone-200 bg-stone-50 px-4 py-2 shrink-0 flex flex-wrap items-center gap-3">
+      <div
+        className={`border-b border-stone-200 bg-stone-50 px-4 py-2 shrink-0 flex flex-wrap items-center gap-3 ${
+          mobileMenuOpen ? '' : 'hidden lg:flex'
+        }`}
+      >
         <input
           className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-medium min-w-[140px] max-w-[220px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
           value={routeName}
@@ -266,7 +278,7 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
         <aside
           className={`w-full lg:w-80 xl:w-96 shrink-0 border-b lg:border-b-0 lg:border-r border-stone-200 bg-stone-50 flex flex-col min-h-0 ${
             selectedTrail ? 'max-h-[min(70vh,720px)] lg:max-h-none' : 'max-h-[45vh] lg:max-h-none'
-          }`}
+          } ${mobileMenuOpen ? '' : 'hidden lg:flex'}`}
         >
           <div className="shrink-0 p-4 pb-2 flex flex-col gap-3">
             <div className="flex gap-2" role="group" aria-label="Build mode">
@@ -435,7 +447,7 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
           </div>
         </aside>
 
-        <section className="flex-1 relative min-h-[300px] lg:min-h-0">
+        <section className={`flex-1 relative ${mobileMenuOpen ? 'min-h-[300px] lg:min-h-0' : 'min-h-0'}`}>
           <TrailMap
             waypoints={waypoints}
             defaultCenter={defaultCenter}
@@ -452,6 +464,7 @@ export default function RoutePlanner({ defaultCenter, onRouteApproved }: RoutePl
             fitKey={fitKey}
             focusPoint={mapFocus}
           />
+          {!mobileMenuOpen && onShowMobileMenu && <ShowMapMenuButton onClick={onShowMobileMenu} />}
           <div
             className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-full bg-stone-900/85 text-white text-sm px-4 py-2 pointer-events-none"
             role="status"

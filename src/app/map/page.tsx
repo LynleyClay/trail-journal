@@ -17,21 +17,23 @@ export default async function MapPage() {
     : loadTrailGeoJsons();
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex-1 flex items-center justify-center text-stone-500 text-sm">
-          Loading map…
-        </div>
-      }
-    >
-      <MapPageTabs
-        myPosts={myPosts}
-        friendsPosts={friendsPosts}
-        trailGeoJsons={trailGeoJsons}
-        defaultCenter={config.map.defaultCenter}
-        defaultZoom={config.map.defaultZoom}
-        isLoggedIn={!!user}
-      />
-    </Suspense>
+    <main className="flex flex-1 flex-col min-h-0">
+      <Suspense
+        fallback={
+          <div className="flex-1 flex items-center justify-center text-stone-500 text-sm">
+            Loading map…
+          </div>
+        }
+      >
+        <MapPageTabs
+          myPosts={myPosts}
+          friendsPosts={friendsPosts}
+          trailGeoJsons={trailGeoJsons}
+          defaultCenter={config.map.defaultCenter}
+          defaultZoom={config.map.defaultZoom}
+          isLoggedIn={!!user}
+        />
+      </Suspense>
+    </main>
   );
 }

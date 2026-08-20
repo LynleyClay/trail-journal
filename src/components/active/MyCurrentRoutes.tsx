@@ -23,6 +23,7 @@ import {
 } from '@/lib/offline/route-store';
 import { ActiveRouteMap } from './ActiveRouteMap';
 import { useLiveGps } from './useLiveGps';
+import { ShowMapMenuButton } from '@/components/map/ShowMapMenuButton';
 
 const TOWN_MAX_MI = 8;
 const WATER_MAX_MI = 0.5;
@@ -51,9 +52,16 @@ function mergeRoutes(apiRoutes: ActiveRoute[], offlineRoutes: ActiveRoute[]): Ac
 type MyCurrentRoutesProps = {
   defaultCenter: [number, number];
   initialRouteId?: string | null;
+  mobileMenuOpen?: boolean;
+  onShowMobileMenu?: () => void;
 };
 
-export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCurrentRoutesProps) {
+export default function MyCurrentRoutes({
+  defaultCenter,
+  initialRouteId,
+  mobileMenuOpen = true,
+  onShowMobileMenu,
+}: MyCurrentRoutesProps) {
   const [routes, setRoutes] = useState<ActiveRoute[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialRouteId ?? null);
   const [loading, setLoading] = useState(true);
@@ -261,7 +269,11 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
 
   return (
     <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
-      <aside className="w-full lg:w-80 shrink-0 border-b lg:border-b-0 lg:border-r border-stone-200 bg-stone-50 p-4 flex flex-col gap-3 min-h-0 max-h-[40vh] lg:max-h-none overflow-y-auto">
+      <aside
+        className={`w-full lg:w-80 shrink-0 border-b lg:border-b-0 lg:border-r border-stone-200 bg-stone-50 p-4 flex flex-col gap-3 min-h-0 max-h-[40vh] lg:max-h-none overflow-y-auto ${
+          mobileMenuOpen ? '' : 'hidden lg:flex'
+        }`}
+      >
         {isOffline && (
           <p className="text-xs rounded-md border border-amber-200 bg-amber-50 text-amber-900 px-3 py-2">
             Offline mode — showing downloaded routes and cached map tiles.
@@ -468,7 +480,7 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
         )}
       </aside>
 
-      <section className="flex-1 relative min-h-[280px] lg:min-h-0">
+      <section className={`flex-1 relative ${mobileMenuOpen ? 'min-h-[280px] lg:min-h-0' : 'min-h-0'}`}>
         {selected ? (
           <>
             <ActiveRouteMap
@@ -478,6 +490,9 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
               trackGps={trackGps}
               useOfflineTiles={selectedOfflineReady}
             />
+            {!mobileMenuOpen && onShowMobileMenu && (
+              <ShowMapMenuButton onClick={onShowMobileMenu} />
+            )}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] flex flex-wrap justify-center gap-2 pointer-events-none px-2">
               <span className="rounded-full bg-blue-700/95 text-white text-xs px-3 py-1.5 inline-flex items-center gap-1.5 shadow">
                 <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
@@ -500,6 +515,9 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
           </>
         ) : (
           <div className="flex h-full items-center justify-center text-stone-500 text-sm">
+            {!mobileMenuOpen && onShowMobileMenu && (
+              <ShowMapMenuButton onClick={onShowMobileMenu} />
+            )}
             Select a route
           </div>
         )}

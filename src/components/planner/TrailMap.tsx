@@ -20,6 +20,7 @@ import {
 import { TOPO_TILE_ATTRIBUTION, TOPO_TILE_URL, fixLeafletIcons } from '@/lib/leaflet-config';
 import { guideStopIcon } from '@/lib/map-poi-icons';
 import { getGuideStopsForTrails, getTrailGuide } from '@/lib/trail-guides';
+import { InvalidateMapOnResize } from '@/components/map/InvalidateMapOnResize';
 import 'leaflet/dist/leaflet.css';
 
 function blazeIcon(index: number, isEnd: boolean) {
@@ -51,12 +52,12 @@ function FitMap({
       const bounds = L.latLngBounds(
         waypoints.map((w) => [w.lat, w.lng] as [number, number]),
       );
-      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 7 });
+      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 14 });
       return;
     }
     if (waypoints.length === 1) {
       const first = waypoints[0];
-      if (first) map.setView([first.lat, first.lng], 8);
+      if (first) map.setView([first.lat, first.lng], Math.max(map.getZoom(), 12));
       return;
     }
     if (showAllTrails) {
@@ -65,7 +66,9 @@ function FitMap({
       );
       map.fitBounds(L.latLngBounds(all), { padding: [36, 36] });
     }
-  }, [map, waypoints, fitKey, showAllTrails]);
+    // Only refit when asked (clear / initial load). Pin drops must not steal the user's zoom.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, fitKey]);
 
   return null;
 }
@@ -266,6 +269,7 @@ export function TrailMap({
       scrollWheelZoom
     >
       <TileLayer attribution={TOPO_TILE_ATTRIBUTION} url={TOPO_TILE_URL} maxZoom={17} />
+      <InvalidateMapOnResize />
       <FitMap waypoints={waypoints} fitKey={fitKey} showAllTrails={waypoints.length === 0} />
       {focusPoint && focusPoint.key > 0 && (
         <FlyToPoint

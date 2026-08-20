@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -19,6 +19,7 @@ import {
   formatWaterType,
   distanceToRouteMiles,
 } from '@/lib/route-proximity';
+import { InvalidateMapOnResize } from '@/components/map/InvalidateMapOnResize';
 import type { GpsPosition } from './useLiveGps';
 import 'leaflet/dist/leaflet.css';
 
@@ -26,13 +27,13 @@ const TOWN_MAX_MI = 8;
 const WATER_MAX_MI = 0.5;
 
 function FitRoute({
-  route,
-  gps,
+  routeId,
+  waypoints,
   towns,
   water,
 }: {
-  route: ActiveRoute;
-  gps: GpsPosition | null;
+  routeId: string;
+  waypoints: ActiveRoute['waypoints'];
   towns: { lat: number; lng: number }[];
   water: { lat: number; lng: number }[];
 }) {
@@ -41,16 +42,38 @@ function FitRoute({
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const L = require('leaflet') as typeof import('leaflet');
     const bounds = L.latLngBounds(
-      route.waypoints.map((w) => [w.lat, w.lng] as [number, number]),
+      waypoints.map((w) => [w.lat, w.lng] as [number, number]),
     );
     for (const poi of [...towns, ...water]) {
       bounds.extend([poi.lat, poi.lng]);
     }
-    if (gps) bounds.extend([gps.lat, gps.lng]);
     if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 11 });
+      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 14 });
     }
-  }, [map, route, gps, towns, water]);
+    // Refit when switching routes, not on GPS ticks or pin-sized marker updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, routeId]);
+  return null;
+}
+
+function FollowGps({ gps, enabled }: { gps: GpsPosition | null; enabled: boolean }) {
+  const map = useMap();
+  const lockedOn = useRef(false);
+
+  useEffect(() => {
+    lockedOn.current = false;
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled || !gps) return;
+    if (!lockedOn.current) {
+      map.setView([gps.lat, gps.lng], Math.max(map.getZoom(), 14));
+      lockedOn.current = true;
+      return;
+    }
+    map.panTo([gps.lat, gps.lng]);
+  }, [map, enabled, gps]);
+
   return null;
 }
 
@@ -140,7 +163,9 @@ export function ActiveRouteMap({
         crossOrigin="anonymous"
         {...(useOfflineTiles ? { updateWhenIdle: true, keepBuffer: 4 } : {})}
       />
-      <FitRoute route={route} gps={gps} towns={towns} water={water} />
+      <InvalidateMapOnResize />
+      <FitRoute routeId={route.id} waypoints={route.waypoints} towns={towns} water={water} />
+      <FollowGps gps={gps} enabled={trackGps} />
 
       {positions.length > 1 && (
         <Polyline

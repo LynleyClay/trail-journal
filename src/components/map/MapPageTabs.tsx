@@ -66,10 +66,16 @@ export default function MapPageTabs({
   const tabParam = searchParams.get('tab');
   const routeParam = searchParams.get('route');
   const [activeTab, setActiveTab] = useState<MapTab>(() => tabFromParam(tabParam));
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(true);
+  const canCollapseMenu = activeTab === 'planner' || activeTab === 'active';
 
   useEffect(() => {
     setActiveTab(tabFromParam(tabParam));
   }, [tabParam]);
+
+  useEffect(() => {
+    setMobileMenuOpen(true);
+  }, [activeTab]);
 
   const switchTab = useCallback(
     (tab: MapTab, routeId?: string) => {
@@ -91,9 +97,27 @@ export default function MapPageTabs({
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
-      <div className="border-b border-stone-200 bg-white px-4 py-3 shrink-0">
-        <h1 className="text-lg font-bold text-stone-900">Trail Map</h1>
-        <p className="text-sm text-stone-500 mb-3">{copy.description}</p>
+      <div
+        className={`border-b border-stone-200 bg-white px-4 py-3 shrink-0 ${
+          canCollapseMenu && !mobileMenuOpen ? 'hidden lg:block' : ''
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-stone-900">Trail Map</h1>
+            <p className="text-sm text-stone-500 mb-3">{copy.description}</p>
+          </div>
+          {canCollapseMenu && (
+            <button
+              type="button"
+              className="lg:hidden shrink-0 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-expanded={mobileMenuOpen}
+            >
+              See map
+            </button>
+          )}
+        </div>
         <div
           className="flex flex-wrap gap-1 rounded-lg bg-stone-100 p-1 w-fit"
           role="tablist"
@@ -145,10 +169,20 @@ export default function MapPageTabs({
           </>
         )}
         {activeTab === 'planner' && (
-          <RoutePlanner defaultCenter={defaultCenter} onRouteApproved={handleRouteApproved} />
+          <RoutePlanner
+            defaultCenter={defaultCenter}
+            onRouteApproved={handleRouteApproved}
+            mobileMenuOpen={mobileMenuOpen}
+            onShowMobileMenu={() => setMobileMenuOpen(true)}
+          />
         )}
         {activeTab === 'active' && (
-          <MyCurrentRoutes defaultCenter={defaultCenter} initialRouteId={routeParam} />
+          <MyCurrentRoutes
+            defaultCenter={defaultCenter}
+            initialRouteId={routeParam}
+            mobileMenuOpen={mobileMenuOpen}
+            onShowMobileMenu={() => setMobileMenuOpen(true)}
+          />
         )}
       </div>
     </div>
