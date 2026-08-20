@@ -1,20 +1,26 @@
 const TILE_CACHE = 'trail-journal-tiles-v1';
-const APP_CACHE = 'trail-journal-app-v2';
-const STATIC_CACHE = 'trail-journal-static-v2';
+const APP_CACHE = 'trail-journal-app-v3';
+const STATIC_CACHE = 'trail-journal-static-v3';
+const RUNTIME_CACHE = 'trail-journal-runtime-v3';
+
+const OFFLINE_HOME = '/map?tab=active';
 
 const PRECACHE_URLS = [
-  '/hike.html',
-  '/hike.js',
-  '/hike.css',
-  '/map?tab=active',
+  OFFLINE_HOME,
   '/map',
+  '/',
   '/manifest.webmanifest',
   '/vendor/leaflet/leaflet.css',
   '/vendor/leaflet/leaflet.js',
   '/vendor/leaflet/marker-icon.png',
   '/vendor/leaflet/marker-icon-2x.png',
   '/vendor/leaflet/marker-shadow.png',
+  '/hike.html',
+  '/hike.js',
+  '/hike.css',
 ];
+
+const OLD_CACHES = ['trail-journal-app-v1', 'trail-journal-app-v2', 'trail-journal-static-v2'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -30,13 +36,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key === 'trail-journal-app-v1')
-            .map((key) => caches.delete(key)),
-        ),
-      )
+      .then((keys) => Promise.all(keys.filter((key) => OLD_CACHES.includes(key)).map((key) => caches.delete(key))))
       .then(() => self.clients.claim()),
   );
 });
@@ -51,14 +51,8 @@ function isTopoTile(url) {
   return url.hostname.includes('opentopomap.org') && url.pathname.endsWith('.png');
 }
 
-function isStaticAsset(pathname) {
-  return (
-    pathname.startsWith('/_next/static/') ||
-    pathname.startsWith('/vendor/') ||
-    pathname.endsWith('.css') ||
-    pathname.endsWith('.js') ||
-    pathname.startsWith('/hike')
-  );
+function isApiRequest(pathname) {
+  return pathname.startsWith('/api/');
 }
 
 async function matchTileByPath(cache, pathname) {
@@ -72,6 +66,21 @@ async function matchTileByPath(cache, pathname) {
   return undefined;
 }
 
+async function readFromCaches(request) {
+  for (const cacheName of [RUNTIME_CACHE, STATIC_CACHE, APP_CACHE]) {
+    const cache = await caches.open(cacheName);
+    const match = await cache.match(request);
+    if (match) return match;
+  }
+  return undefined;
+}
+
+async function storeInRuntime(request, response) {
+  if (!response.ok) return;
+  const cache = await caches.open(RUNTIME_CACHE);
+  await cache.put(request, response.clone());
+}
+
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
@@ -81,29 +90,38 @@ async function cacheFirst(request, cacheName) {
     if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch {
-    return cached || Response.error();
+    const fallback = await readFromCaches(request);
+    return fallback || Response.error();
   }
 }
 
-async function networkFirstNavigation(request) {
-  const cache = await caches.open(APP_CACHE);
+async function networkFirstWithCache(request, cacheName) {
+  const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
-    if (response.ok) await cache.put(request.url, response.clone());
+    if (response.ok) {
+      await cache.put(request.url, response.clone());
+      await storeInRuntime(request, response);
+    }
     return response;
   } catch {
-    const url = new URL(request.url);
     const cached =
       (await cache.match(request.url)) ||
-      (await cache.match(url.pathname)) ||
-      (await cache.match('/hike.html')) ||
-      (await cache.match('/map?tab=active')) ||
-      (await cache.match('/map'));
+      (await cache.match(new URL(request.url).pathname)) ||
+      (await readFromCaches(request));
     if (cached) return cached;
-    return new Response(
-      'Offline — open Trail Journal on WiFi once, download a route, then use /hike.html',
-      { status: 503, headers: { 'Content-Type': 'text/plain' } },
-    );
+
+    if (request.mode === 'navigate') {
+      return (
+        (await cache.match(OFFLINE_HOME)) ||
+        (await cache.match('/map')) ||
+        new Response('Offline — download a route on WiFi first.', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain' },
+        })
+      );
+    }
+    return Response.error();
   }
 }
 
@@ -133,12 +151,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (isStaticAsset(url.pathname)) {
+  if (isApiRequest(url.pathname)) {
+    return;
+  }
+
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/vendor/')) {
     event.respondWith(cacheFirst(event.request, STATIC_CACHE));
     return;
   }
 
-  if (event.request.mode === 'navigate') {
-    event.respondWith(networkFirstNavigation(event.request));
+  if (
+    event.request.mode === 'navigate' ||
+    event.request.headers.get('RSC') === '1' ||
+    event.request.headers.get('Next-Router-Prefetch') === '1'
+  ) {
+    event.respondWith(networkFirstWithCache(event.request, APP_CACHE));
+    return;
   }
+
+  event.respondWith(networkFirstWithCache(event.request, RUNTIME_CACHE));
 });

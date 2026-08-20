@@ -254,7 +254,7 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
   const downloadPct =
     downloadProgress && downloadProgress.total > 0
       ? downloadProgress.phase === 'shell'
-        ? 'Saving offline app…'
+        ? 'Saving app for offline…'
         : `${Math.round((downloadProgress.done / downloadProgress.total) * 100)}%`
       : '';
 
@@ -310,21 +310,13 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
             <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-2 space-y-2">
               <p className="text-xs text-emerald-900 font-medium">Use without cell service</p>
               <p className="text-xs text-emerald-800">
-                Download on WiFi, then open the offline hike page on trail — it works in airplane
-                mode with GPS.
+                Download on WiFi — the app saves itself so you can open Trail Journal in airplane
+                mode and use My Current Routes with GPS.
               </p>
               {selectedOfflineReady ? (
                 <div className="space-y-2">
-                  <p className="text-xs text-emerald-800 font-medium">Ready for offline use</p>
-                  <a
-                    href="/hike.html"
-                    className="inline-block rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"
-                  >
-                    Open offline hike map
-                  </a>
-                  <p className="text-xs text-emerald-800">
-                    Tip: bookmark or add <span className="font-medium">/hike.html</span> to your
-                    home screen before you leave.
+                  <p className="text-xs text-emerald-800 font-medium">
+                    Ready — open the app normally on trail (add to home screen recommended).
                   </p>
                   {!isOffline && (
                     <button
@@ -345,7 +337,7 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
                 >
                   {downloading
                     ? downloadProgress?.phase === 'shell'
-                      ? 'Saving offline app…'
+                      ? 'Saving app for offline…'
                       : `Downloading map… ${downloadPct}`
                     : `Download for offline (~${estimateOfflineDownload(selected).tileCount} tiles)`}
                 </button>
