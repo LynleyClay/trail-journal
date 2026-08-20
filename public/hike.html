@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#059669" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Trail Journal — Offline Hike</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="/hike.css" />
+  </head>
+  <body>
+    <header class="hike-header">
+      <h1>Offline hike map</h1>
+      <p id="status" class="hike-status">Loading downloaded routes…</p>
+    </header>
+    <div class="hike-layout">
+      <aside class="hike-sidebar">
+        <label class="hike-label">
+          <input type="checkbox" id="track-gps" />
+          Track my location (GPS)
+        </label>
+        <p id="gps-status" class="hike-gps"></p>
+        <ul id="route-list" class="hike-routes"></ul>
+        <p class="hike-note">
+          This page works without cell service. Download routes on WiFi first from My Current Routes.
+        </p>
+      </aside>
+      <main id="map" class="hike-map" aria-label="Offline route map"></main>
+    </div>
+    <script src="/vendor/leaflet/leaflet.js"></script>
+    <script src="/hike.js"></script>
+  </body>
+</html>

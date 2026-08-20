@@ -253,8 +253,10 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
 
   const downloadPct =
     downloadProgress && downloadProgress.total > 0
-      ? Math.round((downloadProgress.done / downloadProgress.total) * 100)
-      : 0;
+      ? downloadProgress.phase === 'shell'
+        ? 'Saving offline app…'
+        : `${Math.round((downloadProgress.done / downloadProgress.total) * 100)}%`
+      : '';
 
   return (
     <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
@@ -308,12 +310,22 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
             <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-2 space-y-2">
               <p className="text-xs text-emerald-900 font-medium">Use without cell service</p>
               <p className="text-xs text-emerald-800">
-                Download the map while on WiFi. On trail, open this page and turn on GPS — your
-                position works without cell towers.
+                Download on WiFi, then open the offline hike page on trail — it works in airplane
+                mode with GPS.
               </p>
               {selectedOfflineReady ? (
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-xs text-emerald-800 font-medium">Ready for offline use</span>
+                <div className="space-y-2">
+                  <p className="text-xs text-emerald-800 font-medium">Ready for offline use</p>
+                  <a
+                    href="/hike.html"
+                    className="inline-block rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"
+                  >
+                    Open offline hike map
+                  </a>
+                  <p className="text-xs text-emerald-800">
+                    Tip: bookmark or add <span className="font-medium">/hike.html</span> to your
+                    home screen before you leave.
+                  </p>
                   {!isOffline && (
                     <button
                       type="button"
@@ -332,7 +344,9 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
                   className="w-full rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
                   {downloading
-                    ? `Downloading map… ${downloadPct}%`
+                    ? downloadProgress?.phase === 'shell'
+                      ? 'Saving offline app…'
+                      : `Downloading map… ${downloadPct}`
                     : `Download for offline (~${estimateOfflineDownload(selected).tileCount} tiles)`}
                 </button>
               )}

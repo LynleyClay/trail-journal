@@ -18,8 +18,8 @@ export function fixLeafletIcons(): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
-    iconUrl: '/leaflet/marker-icon.png',
-    iconRetinaUrl: '/leaflet/marker-icon-2x.png',
-    shadowUrl: '/leaflet/marker-shadow.png',
+    iconUrl: '/vendor/leaflet/marker-icon.png',
+    iconRetinaUrl: '/vendor/leaflet/marker-icon-2x.png',
+    shadowUrl: '/vendor/leaflet/marker-shadow.png',
   });
 }

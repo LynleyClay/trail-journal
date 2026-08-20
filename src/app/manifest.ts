@@ -8,10 +8,20 @@ export default function manifest(): MetadataRoute.Manifest {
     name: config.name,
     short_name: config.name,
     description: config.tagline,
-    start_url: '/map?tab=active',
+    start_url: '/hike.html',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#059669',
+    shortcuts: [
+      {
+        name: 'My map',
+        url: '/map?tab=active',
+      },
+      {
+        name: 'Journal',
+        url: '/',
+      },
+    ],
     icons: [
       {
         src: '/icon-192.png',

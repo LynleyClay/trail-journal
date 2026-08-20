@@ -8,9 +8,10 @@ import {
 } from '@/lib/offline/tile-math';
 import { cacheTile } from '@/lib/offline/tile-cache';
 import { saveOfflineRoute } from '@/lib/offline/route-store';
+import { precacheOfflineShell } from '@/lib/offline/app-shell';
 
 export type DownloadProgress = {
-  phase: 'tiles' | 'done';
+  phase: 'tiles' | 'shell' | 'done';
   done: number;
   total: number;
   failed: number;
@@ -65,6 +66,9 @@ export async function downloadRouteForOffline(
     downloadedAt: new Date().toISOString(),
     tileCount: tiles.length - failed,
   });
+
+  onProgress?.({ phase: 'shell', done: 0, total: 1, failed: 0 });
+  await precacheOfflineShell();
 
   onProgress?.({ phase: 'done', done: tiles.length, total: tiles.length, failed });
   return { ok: true, tileCount: tiles.length - failed, failed };
