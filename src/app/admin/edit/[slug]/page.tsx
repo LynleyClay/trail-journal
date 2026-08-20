@@ -27,6 +27,7 @@ export default async function AdminEditPostPage({ params }: PageProps) {
           coverPhoto: post.coverPhoto,
           photos: post.photos.map((p) => ({
             ...p,
+            id: p.filename,
             url: photoUrl(post.slug, p.filename),
             previewUrl: photoUrl(post.slug, p.filename),
           })),

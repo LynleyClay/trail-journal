@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { ActiveRoute } from '@/lib/active-routes';
 import { routeStats } from '@/lib/routes';
 import {
@@ -311,8 +312,15 @@ export default function MyCurrentRoutes({ defaultCenter, initialRouteId }: MyCur
               <p className="text-xs text-emerald-900 font-medium">Use without cell service</p>
               <p className="text-xs text-emerald-800">
                 Download on WiFi — the app saves itself so you can open Trail Journal in airplane
-                mode and use My Current Routes with GPS.
+                mode, use My Current Routes with GPS, and write journal drafts with photos.
               </p>
+              <Link
+                href="/admin/new"
+                prefetch={false}
+                className="block w-full text-center rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
+              >
+                Write a journal draft
+              </Link>
               {selectedOfflineReady ? (
                 <div className="space-y-2">
                   <p className="text-xs text-emerald-800 font-medium">

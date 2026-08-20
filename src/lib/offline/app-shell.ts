@@ -1,4 +1,4 @@
-export const OFFLINE_APP_PAGES = ['/map?tab=active', '/map', '/'];
+export const OFFLINE_APP_PAGES = ['/map?tab=active', '/map', '/', '/admin/new', '/drafts'];
 
 export const OFFLINE_SHELL_URLS = [
   '/manifest.webmanifest',
@@ -10,12 +10,13 @@ export const OFFLINE_SHELL_URLS = [
   '/hike.html',
   '/hike.js',
   '/hike.css',
+  '/offline-draft.js?v=8',
   ...OFFLINE_APP_PAGES,
 ];
 
-export const APP_SHELL_CACHE = 'trail-journal-app-v3';
-export const STATIC_CACHE = 'trail-journal-static-v3';
-export const RUNTIME_CACHE = 'trail-journal-runtime-v3';
+export const APP_SHELL_CACHE = 'trail-journal-app-v5';
+export const STATIC_CACHE = 'trail-journal-static-v5';
+export const RUNTIME_CACHE = 'trail-journal-runtime-v5';
 
 function extractAssetPaths(html: string): string[] {
   const paths = new Set<string>();
@@ -45,10 +46,19 @@ function loadedAssetPaths(): string[] {
   return [...paths];
 }
 
+function redirectedAway(requestPath: string, responseUrl: string): boolean {
+  const requested = requestPath.split('?')[0];
+  try {
+    return new URL(responseUrl).pathname !== requested;
+  } catch {
+    return false;
+  }
+}
+
 async function cachePath(path: string, cacheName: string): Promise<boolean> {
   try {
     const res = await fetch(path, { cache: 'no-store' });
-    if (!res.ok) return false;
+    if (!res.ok || redirectedAway(path, res.url)) return false;
     const cache = await caches.open(cacheName);
     await cache.put(path, res.clone());
     return true;
@@ -61,7 +71,7 @@ async function cacheHtmlAndAssets(pagePath: string): Promise<number> {
   let cached = 0;
   try {
     const res = await fetch(pagePath, { cache: 'no-store' });
-    if (res.ok) {
+    if (res.ok && !redirectedAway(pagePath, res.url)) {
       const html = await res.text();
       const appCache = await caches.open(APP_SHELL_CACHE);
       await appCache.put(pagePath, new Response(html, { headers: res.headers }));
@@ -117,6 +127,7 @@ export async function precacheOfflineShell(): Promise<number> {
   }
 
   await warmAppInBackground('/map?tab=active');
+  await warmAppInBackground('/admin/new');
 
   for (const path of loadedAssetPaths()) {
     if (await cachePath(path, STATIC_CACHE)) cached++;
@@ -127,4 +138,13 @@ export async function precacheOfflineShell(): Promise<number> {
   }
 
   return cached;
+}
+
+/** Cache the new-post form so it opens without cell service. */
+export async function cacheComposerPage(): Promise<void> {
+  if (typeof caches === 'undefined') return;
+  await cacheHtmlAndAssets('/admin/new');
+  for (const path of loadedAssetPaths()) {
+    await cachePath(path, STATIC_CACHE);
+  }
 }

@@ -18,7 +18,7 @@ export function SiteHeaderNav({ user }: SiteHeaderNavProps) {
   }
 
   return (
-    <nav className="flex items-center gap-5 text-sm font-medium">
+    <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm font-medium">
       <Link href="/" className="text-stone-600 hover:text-emerald-700 transition-colors">
         Posts
       </Link>

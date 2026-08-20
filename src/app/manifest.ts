@@ -18,6 +18,10 @@ export default function manifest(): MetadataRoute.Manifest {
         url: '/map?tab=active',
       },
       {
+        name: 'New post',
+        url: '/admin/new',
+      },
+      {
         name: 'Journal',
         url: '/',
       },

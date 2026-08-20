@@ -11,7 +11,7 @@ export async function SiteHeader({ siteName }: SiteHeaderProps) {
 
   return (
     <header className="border-b border-stone-200 bg-white shrink-0">
-      <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+      <div className="mx-auto max-w-5xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
         <Link href="/" className="text-lg font-bold text-stone-900">
           {siteName}
         </Link>

@@ -1,7 +1,7 @@
 const TILE_CACHE = 'trail-journal-tiles-v1';
-const APP_CACHE = 'trail-journal-app-v3';
-const STATIC_CACHE = 'trail-journal-static-v3';
-const RUNTIME_CACHE = 'trail-journal-runtime-v3';
+const APP_CACHE = 'trail-journal-app-v5';
+const STATIC_CACHE = 'trail-journal-static-v5';
+const RUNTIME_CACHE = 'trail-journal-runtime-v5';
 
 const OFFLINE_HOME = '/map?tab=active';
 
@@ -9,6 +9,8 @@ const PRECACHE_URLS = [
   OFFLINE_HOME,
   '/map',
   '/',
+  '/drafts',
+  '/admin/new',
   '/manifest.webmanifest',
   '/vendor/leaflet/leaflet.css',
   '/vendor/leaflet/leaflet.js',
@@ -18,9 +20,20 @@ const PRECACHE_URLS = [
   '/hike.html',
   '/hike.js',
   '/hike.css',
+  '/offline-draft.js?v=8',
 ];
 
-const OLD_CACHES = ['trail-journal-app-v1', 'trail-journal-app-v2', 'trail-journal-static-v2'];
+const OLD_CACHES = [
+  'trail-journal-app-v1',
+  'trail-journal-app-v2',
+  'trail-journal-app-v3',
+  'trail-journal-app-v4',
+  'trail-journal-static-v2',
+  'trail-journal-static-v3',
+  'trail-journal-static-v4',
+  'trail-journal-runtime-v3',
+  'trail-journal-runtime-v4',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -155,8 +168,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/vendor/')) {
+  if (url.pathname.startsWith('/vendor/')) {
     event.respondWith(cacheFirst(event.request, STATIC_CACHE));
+    return;
+  }
+
+  if (url.pathname.startsWith('/_next/')) {
+    event.respondWith(networkFirstWithCache(event.request, STATIC_CACHE));
     return;
   }
 
