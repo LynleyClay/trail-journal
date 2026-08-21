@@ -230,8 +230,14 @@ export default function MapPageTabs({
                   )}
                   {viewedTramily ? (
                     <div className="absolute inset-0">
-                      <div className="pointer-events-none absolute top-3 left-3 z-[1100] rounded-md bg-white/90 px-3 py-1.5 text-xs font-medium text-stone-700 shadow-sm">
-                        Viewing {viewedTramily.displayName}&apos;s map
+                      <div className="pointer-events-none absolute top-3 left-3 z-[1100] max-w-[calc(100%-1.5rem)] rounded-md bg-white/90 px-3 py-1.5 text-xs font-medium text-stone-700 shadow-sm">
+                        Viewing {viewedTramily.displayName}&apos;s map.{' '}
+                        <Link
+                          href={`/u/${viewedTramily.username}`}
+                          className="pointer-events-auto text-emerald-700 underline"
+                        >
+                          See their posts
+                        </Link>
                       </div>
                       <MapView
                         posts={viewedTramily.posts}

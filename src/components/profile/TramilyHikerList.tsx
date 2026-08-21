@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import FollowButton from '@/components/profile/FollowButton';
@@ -130,16 +131,24 @@ export function TramilyHikerList({
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onSelect?.(hiker.username)}
-                    className="min-w-0 text-left hover:text-emerald-800"
-                  >
-                    <span className="block text-sm font-medium text-stone-900">{hiker.displayName}</span>
-                    <span className="block text-xs text-stone-500">
-                      {hiker.inTramily ? 'Tap to view their trail map' : `Trail name @${hiker.username}`}
-                    </span>
-                  </button>
+                  <div className="min-w-0">
+                    <Link
+                      href={`/u/${hiker.username}`}
+                      className="block text-sm font-medium text-stone-900 hover:text-emerald-800"
+                    >
+                      {hiker.displayName}
+                    </Link>
+                    <span className="block text-xs text-stone-500">@{hiker.username}</span>
+                    {hiker.inTramily && (
+                      <button
+                        type="button"
+                        onClick={() => onSelect?.(hiker.username)}
+                        className="mt-1 text-xs font-medium text-emerald-700 hover:underline"
+                      >
+                        {selectedUsername === hiker.username ? 'Viewing their map' : 'View map'}
+                      </button>
+                    )}
+                  </div>
                   <FollowButton
                     username={hiker.username}
                     initialFollowing={hiker.inTramily}

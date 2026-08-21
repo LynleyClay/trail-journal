@@ -100,7 +100,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
       </div>
 
       <section className="mx-auto w-full max-w-5xl px-4 py-10 shrink-0">
-        <h2 className="text-lg font-bold text-stone-900 mb-6">Journal entries</h2>
+        <h2 className="text-lg font-bold text-stone-900 mb-6">
+          {currentUser?.id === user.id ? 'Journal entries' : `${publicUser.displayName}'s posts`}
+        </h2>
         {posts.length === 0 ? (
           <p className="text-stone-500">No published entries yet.</p>
         ) : (
