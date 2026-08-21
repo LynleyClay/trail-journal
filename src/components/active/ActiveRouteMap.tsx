@@ -20,6 +20,7 @@ import {
   distanceToRouteMiles,
 } from '@/lib/route-proximity';
 import { InvalidateMapOnResize } from '@/components/map/InvalidateMapOnResize';
+import { progressAlongRoute } from '@/lib/elevation';
 import type { GpsPosition } from './useLiveGps';
 import 'leaflet/dist/leaflet.css';
 
@@ -120,12 +121,51 @@ function waterIcon() {
   });
 }
 
+function InspectPopup({
+  point,
+  elevationFt,
+}: {
+  point: { lat: number; lng: number; miles: number };
+  elevationFt?: number;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const L = require('leaflet') as typeof import('leaflet');
+    const elev =
+      elevationFt != null
+        ? `<p style="margin:4px 0 0;font-size:13px">${Math.round(elevationFt).toLocaleString('en-US')} ft</p>`
+        : '';
+    const popup = L.popup({ closeButton: true, autoPan: true })
+      .setLatLng([point.lat, point.lng])
+      .setContent(`<div style="min-width:120px"><strong>Mile ${point.miles.toFixed(1)}</strong>${elev}</div>`)
+      .openOn(map);
+    return () => {
+      map.closePopup(popup);
+    };
+  }, [map, point.lat, point.lng, point.miles, elevationFt]);
+
+  return (
+    <CircleMarker
+      center={[point.lat, point.lng]}
+      radius={8}
+      pathOptions={{ color: '#fff', weight: 3, fillColor: '#c2410c', fillOpacity: 1 }}
+    />
+  );
+}
+
+type InspectPoint = { lat: number; lng: number; miles: number };
+
 type ActiveRouteMapProps = {
   route: ActiveRoute;
   gps: GpsPosition | null;
   defaultCenter: [number, number];
   trackGps: boolean;
   useOfflineTiles?: boolean;
+  inspectPoint?: InspectPoint | null;
+  inspectElevationFt?: number;
+  onInspectRoute?: (point: InspectPoint) => void;
 };
 
 export function ActiveRouteMap({
@@ -134,6 +174,9 @@ export function ActiveRouteMap({
   defaultCenter,
   trackGps,
   useOfflineTiles = false,
+  inspectPoint = null,
+  inspectElevationFt,
+  onInspectRoute,
 }: ActiveRouteMapProps) {
   useEffect(() => {
     fixLeafletIcons();
@@ -154,6 +197,13 @@ export function ActiveRouteMap({
     [route.water, route.waypoints],
   );
 
+  const inspectRoute = (lat: number, lng: number) => {
+    if (!onInspectRoute) return;
+    const along = progressAlongRoute(route.waypoints, { lat, lng });
+    if (along.offRouteMiles > 1.25) return;
+    onInspectRoute({ lat: along.lat, lng: along.lng, miles: along.miles });
+  };
+
   return (
     <MapContainer center={defaultCenter} zoom={6} className="h-full w-full" scrollWheelZoom>
       <TileLayer
@@ -168,13 +218,31 @@ export function ActiveRouteMap({
       <FollowGps gps={gps} enabled={trackGps} />
 
       {positions.length > 1 && (
-        <Polyline
-          positions={positions}
-          pathOptions={{ color: '#E85D04', weight: 4, opacity: 0.95, lineCap: 'round' }}
-        />
+        <>
+          <Polyline
+            positions={positions}
+            pathOptions={{ color: '#E85D04', weight: 18, opacity: 0 }}
+            eventHandlers={{
+              click: (event) => {
+                inspectRoute(event.latlng.lat, event.latlng.lng);
+              },
+            }}
+          />
+          <Polyline
+            positions={positions}
+            pathOptions={{ color: '#E85D04', weight: 4, opacity: 0.95, lineCap: 'round' }}
+            eventHandlers={{
+              click: (event) => {
+                inspectRoute(event.latlng.lat, event.latlng.lng);
+              },
+            }}
+          />
+        </>
       )}
 
-      {route.waypoints.map((w, i) => (
+      {route.waypoints.map((w, i) => {
+        if (w.kind === 'shape') return null;
+        return (
         <CircleMarker
           key={w.id}
           center={[w.lat, w.lng]}
@@ -185,13 +253,12 @@ export function ActiveRouteMap({
             fillColor: '#E85D04',
             fillOpacity: 0.95,
           }}
-        >
-          <Popup>
-            <strong>{w.name}</strong>
-            {w.note ? <p className="text-sm mt-1">{w.note}</p> : null}
-          </Popup>
-        </CircleMarker>
-      ))}
+          eventHandlers={{
+            click: () => inspectRoute(w.lat, w.lng),
+          }}
+        />
+        );
+      })}
 
       {towns.map((poi) => {
         const dist = distanceToRouteMiles(poi, route.waypoints);
@@ -248,6 +315,9 @@ export function ActiveRouteMap({
             <Popup>You are here</Popup>
           </Marker>
         </>
+      )}
+      {inspectPoint && (
+        <InspectPopup point={inspectPoint} elevationFt={inspectElevationFt} />
       )}
     </MapContainer>
   );

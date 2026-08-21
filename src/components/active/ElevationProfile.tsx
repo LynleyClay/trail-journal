@@ -59,6 +59,7 @@ export function RouteViewToggle({
 type ElevationProfileViewProps = {
   profile: ElevationProfileData;
   gpsMiles?: number | null;
+  inspectMiles?: number | null;
   gps?: GpsPosition | null;
   compact?: boolean;
   onExpand?: () => void;
@@ -67,6 +68,7 @@ type ElevationProfileViewProps = {
 export function ElevationProfileView({
   profile,
   gpsMiles,
+  inspectMiles = null,
   compact = false,
   onExpand,
 }: ElevationProfileViewProps) {
@@ -104,7 +106,8 @@ export function ElevationProfileView({
     profile.samples[0]!,
   );
   const youMiles = gpsMiles ?? null;
-  const markerMiles = scrubMiles ?? youMiles;
+  const inspect = inspectMiles != null ? elevationAtMiles(profile, inspectMiles) : null;
+  const markerMiles = scrubMiles ?? inspectMiles ?? youMiles;
   const marker = markerMiles != null ? elevationAtMiles(profile, markerMiles) : null;
   const remaining = youMiles != null ? remainingClimbFt(profile, youMiles) : profile.gainFt;
   const youX = youMiles != null ? xOfMiles(layout, youMiles) : null;
@@ -293,6 +296,27 @@ export function ElevationProfileView({
             </g>
           )}
 
+          {inspect && (
+            <g>
+              <line
+                x1={xOfMiles(layout, inspect.miles)}
+                x2={xOfMiles(layout, inspect.miles)}
+                y1={layout.pad.top}
+                y2={layout.pad.top + layout.innerHeight}
+                stroke="#9a3412"
+                strokeWidth={compact ? 2 : 2.5}
+              />
+              <circle
+                cx={xOfMiles(layout, inspect.miles)}
+                cy={yOfFt(layout, inspect.elevationFt)}
+                r={compact ? 5 : 7}
+                fill="#c2410c"
+                stroke="#fff"
+                strokeWidth="2"
+              />
+            </g>
+          )}
+
           {marker && !compact && scrubMiles != null && (
             <g>
               <line
@@ -329,6 +353,11 @@ export function ElevationProfileView({
             </text>
           ))}
         </svg>
+        {inspect && compact && (
+          <p className="pointer-events-none absolute left-2 right-2 top-1 text-center text-[11px] font-semibold text-stone-800">
+            Mile {inspect.miles.toFixed(1)} · {formatFeet(inspect.elevationFt)}
+          </p>
+        )}
       </div>
 
       {!compact && marker && (

@@ -23,6 +23,7 @@ import {
 } from '@/lib/offline/route-store';
 import { getCachedElevation, saveCachedElevation } from '@/lib/offline/elevation-store';
 import {
+  elevationAtMiles,
   formatFeet,
   geometryKey,
   progressAlongRoute,
@@ -86,6 +87,7 @@ export default function MyCurrentRoutes({
   const [profile, setProfile] = useState<ElevationProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [inspect, setInspect] = useState<{ lat: number; lng: number; miles: number } | null>(null);
 
   const selected = routes.find((r) => r.id === selectedId) ?? null;
   const selectedOfflineReady = selected ? offlineReadyIds.has(selected.id) : false;
@@ -175,6 +177,11 @@ export default function MyCurrentRoutes({
     if (routes.length === 0) return;
     setSelectedId((current) => pickDefaultRouteId(routes, initialRouteId ?? current));
   }, [routes, initialRouteId]);
+
+  useEffect(() => {
+    setInspect(null);
+    setRouteView('map');
+  }, [selectedId]);
 
   useEffect(() => {
     if (!selected || selected.waypoints.length < 2) {
@@ -597,6 +604,7 @@ export default function MyCurrentRoutes({
                   <ElevationProfileView
                     profile={profile}
                     gpsMiles={gpsMiles}
+                    inspectMiles={inspect?.miles ?? null}
                     gps={gps}
                   />
                 ) : (
@@ -616,13 +624,21 @@ export default function MyCurrentRoutes({
                     defaultCenter={defaultCenter}
                     trackGps={trackGps}
                     useOfflineTiles={selectedOfflineReady}
+                    inspectPoint={inspect}
+                    inspectElevationFt={
+                      inspect && profile
+                        ? elevationAtMiles(profile, inspect.miles).elevationFt
+                        : undefined
+                    }
+                    onInspectRoute={setInspect}
                   />
                 </div>
                 {profile && (
-                  <div className="pointer-events-auto absolute inset-x-3 bottom-[3.25rem] z-[1000] h-20 overflow-hidden rounded-xl border border-stone-200 bg-white/95 shadow-md lg:bottom-16">
+                  <div className="pointer-events-auto absolute inset-x-3 bottom-[3.25rem] z-[1000] h-24 overflow-hidden rounded-xl border border-stone-200 bg-white/95 shadow-md lg:bottom-16">
                     <ElevationProfileView
                       profile={profile}
                       gpsMiles={gpsMiles}
+                      inspectMiles={inspect?.miles ?? null}
                       gps={gps}
                       compact
                       onExpand={() => setView('climb')}

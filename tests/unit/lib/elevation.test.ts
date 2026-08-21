@@ -66,6 +66,8 @@ describe('elevation helpers', () => {
     expect(progress.offRouteMiles).toBeLessThan(0.2);
     expect(progress.miles).toBeGreaterThan(6);
     expect(progress.miles).toBeLessThan(9);
+    expect(progress.lat).toBeCloseTo(35.1, 2);
+    expect(progress.lng).toBeCloseTo(-83, 2);
   });
 
   it('reads elevation and remaining climb at a mile marker', () => {

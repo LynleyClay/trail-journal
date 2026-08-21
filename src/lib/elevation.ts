@@ -175,14 +175,23 @@ function closestTOnSegment(p: LatLng, a: LatLng, b: LatLng): { t: number; dist: 
 export function progressAlongRoute(
   waypoints: LatLng[],
   point: LatLng,
-): { miles: number; offRouteMiles: number } {
-  if (waypoints.length === 0) return { miles: 0, offRouteMiles: Infinity };
+): { miles: number; offRouteMiles: number; lat: number; lng: number } {
+  const fallback = waypoints[0] ?? { lat: 0, lng: 0 };
+  if (waypoints.length === 0) {
+    return { miles: 0, offRouteMiles: Infinity, lat: fallback.lat, lng: fallback.lng };
+  }
   if (waypoints.length === 1) {
-    return { miles: 0, offRouteMiles: haversineMiles(point, waypoints[0]!) };
+    return {
+      miles: 0,
+      offRouteMiles: haversineMiles(point, fallback),
+      lat: fallback.lat,
+      lng: fallback.lng,
+    };
   }
 
   let bestMiles = 0;
   let bestDist = Infinity;
+  let bestPoint = fallback;
   let walked = 0;
 
   for (let i = 1; i < waypoints.length; i++) {
@@ -193,11 +202,12 @@ export function progressAlongRoute(
     if (dist < bestDist) {
       bestDist = dist;
       bestMiles = walked + seg * t;
+      bestPoint = interpolatePoint(a, b, t);
     }
     walked += seg;
   }
 
-  return { miles: bestMiles, offRouteMiles: bestDist };
+  return { miles: bestMiles, offRouteMiles: bestDist, lat: bestPoint.lat, lng: bestPoint.lng };
 }
 
 export function elevationAtMiles(profile: ElevationProfile, miles: number): ElevationSample {
