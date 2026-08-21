@@ -47,7 +47,7 @@ export default function RoutePlanner({
   const [fitKey, setFitKey] = useState(0);
   const [mapFocus, setMapFocus] = useState({ lat: 0, lng: 0, key: 0 });
   const [status, setStatus] = useState<string | null>(
-    'Tap a trail to pin onto it, then tap further along it to use only that stretch.',
+    'Double-tap or press and hold to drop a pin. Drag to move the map.',
   );
   const [sidebarTab, setSidebarTab] = useState<'trails' | 'route'>('trails');
   const [approving, setApproving] = useState(false);
@@ -69,7 +69,7 @@ export default function RoutePlanner({
     setSelectedId(null);
     setSelectedTrailId(null);
     setRouteName('My route');
-    setStatus('Route cleared. Tap a trail to pin a stretch, or tap the map for a custom pin.');
+    setStatus('Route cleared. Double-tap or hold on a trail for a stretch, or on empty map for a custom pin.');
     setFitKey((k) => k + 1);
     setSidebarTab('trails');
   }, []);
@@ -135,7 +135,7 @@ export default function RoutePlanner({
             setStatus(
               kind === 'segment'
                 ? `Using ${destTrail.abbrev} between your pins — not the full ${destTrail.miles.toLocaleString()} mi trail.`
-                : `Pinned ${destTrail.abbrev}. Tap further along it to take only that stretch.`,
+                : `Pinned ${destTrail.abbrev}. Double-tap or hold further along it to take only that stretch.`,
             );
             return next;
           });
@@ -182,7 +182,7 @@ export default function RoutePlanner({
             setStatus(
               last
                 ? `Pinned ${destTrail.abbrev}. No walkable path found — straight line from your last pin.`
-                : `Pinned ${destTrail.abbrev}. Tap further along it to take only that stretch.`,
+                : `Pinned ${destTrail.abbrev}. Double-tap or hold further along it to take only that stretch.`,
             );
           } else {
             setStatus(
@@ -205,13 +205,6 @@ export default function RoutePlanner({
       }
     },
     [waypoints, recordAction],
-  );
-
-  const snapTrailPin = useCallback(
-    (trailId: string, lat: number, lng: number) => {
-      void placePin(lat, lng, { trailId });
-    },
-    [placePin],
   );
 
   const addWaypoint = useCallback((lat: number, lng: number, name?: string) => {
@@ -367,8 +360,8 @@ export default function RoutePlanner({
         >
           <div className="shrink-0 p-4 pb-2 flex flex-col gap-3">
             <p className="text-sm text-stone-600">
-              Tap a trail (or near one) to snap onto it. Tap again further along it for that stretch.
-              Between trails, the map looks for a walkable path instead of drawing a straight line.
+              Double-tap or press and hold to drop a pin (drag to pan). Near a trail, it snaps on.
+              Hold again further along that trail for just that stretch.
             </p>
 
             <LocationSearch onSelect={addWaypointFromSearch} />
@@ -490,8 +483,8 @@ export default function RoutePlanner({
               )
             ) : waypoints.length === 0 ? (
               <p className="text-sm text-stone-500">
-                No route yet. Tap a trail on the map to pin a start, tap again to take only that
-                stretch, or drop custom pins to link trails together.
+                No route yet. Double-tap or press and hold on a trail to pin a start, then again
+                further along it for only that stretch. Empty map drops a custom pin.
               </p>
             ) : (
               <div className="flex flex-col gap-3">
@@ -520,7 +513,6 @@ export default function RoutePlanner({
             highlightedTrailId={highlightedTrailId}
             onAddWaypoint={addWaypoint}
             onMoveWaypoint={moveWaypoint}
-            onTrailClick={snapTrailPin}
             onHoverTrail={setHighlightedTrailId}
             fitKey={fitKey}
             focusPoint={mapFocus}
@@ -533,8 +525,8 @@ export default function RoutePlanner({
             {lookingForPath
               ? 'Looking for a walkable path…'
               : highlightedTrailId
-                ? `${getTrailById(highlightedTrailId)?.abbrev ?? ''} — tap to pin, tap again for a stretch`
-                : 'Tap a trail or near a path to snap; empty map drops a pin'}
+                ? `${getTrailById(highlightedTrailId)?.abbrev ?? ''} — double-tap or hold to pin, again for a stretch`
+                : 'Double-tap or hold to pin · drag to move the map'}
           </div>
         </section>
       </div>

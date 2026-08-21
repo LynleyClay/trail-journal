@@ -35,7 +35,7 @@ const TAB_COPY: Record<MapTab, { label: string; description: string }> = {
   },
   active: {
     label: 'My Current Routes',
-    description: 'Approved routes with resupply towns, water sources, and live GPS tracking.',
+    description: 'Approved routes with a climb profile, resupply towns, water, and live GPS.',
   },
 };
 
@@ -66,14 +66,24 @@ export default function MapPageTabs({
   const tabParam = searchParams.get('tab');
   const routeParam = searchParams.get('route');
   const [activeTab, setActiveTab] = useState<MapTab>(() => tabFromParam(tabParam));
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(true);
   const canCollapseMenu = activeTab === 'planner' || activeTab === 'active';
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const tab = tabFromParam(tabParam);
+    const phone = window.matchMedia('(max-width: 1023px)').matches;
+    return !(phone && (tab === 'planner' || tab === 'active'));
+  });
 
   useEffect(() => {
     setActiveTab(tabFromParam(tabParam));
   }, [tabParam]);
 
   useEffect(() => {
+    const phone = window.matchMedia('(max-width: 1023px)').matches;
+    if (phone && (activeTab === 'planner' || activeTab === 'active')) {
+      setMobileMenuOpen(false);
+      return;
+    }
     setMobileMenuOpen(true);
   }, [activeTab]);
 
@@ -182,6 +192,7 @@ export default function MapPageTabs({
             initialRouteId={routeParam}
             mobileMenuOpen={mobileMenuOpen}
             onShowMobileMenu={() => setMobileMenuOpen(true)}
+            onHideMobileMenu={() => setMobileMenuOpen(false)}
           />
         )}
       </div>

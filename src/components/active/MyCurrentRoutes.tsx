@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { ActiveRoute } from '@/lib/active-routes';
 import { routeStats } from '@/lib/routes';
@@ -21,7 +21,15 @@ import {
   listOfflineRoutes,
   saveOfflineRoute,
 } from '@/lib/offline/route-store';
+import { getCachedElevation, saveCachedElevation } from '@/lib/offline/elevation-store';
+import {
+  formatFeet,
+  geometryKey,
+  progressAlongRoute,
+  type ElevationProfile,
+} from '@/lib/elevation';
 import { ActiveRouteMap } from './ActiveRouteMap';
+import { ElevationProfileView, RouteViewToggle } from './ElevationProfile';
 import { useLiveGps } from './useLiveGps';
 import { ShowMapMenuButton } from '@/components/map/ShowMapMenuButton';
 
@@ -54,6 +62,7 @@ type MyCurrentRoutesProps = {
   initialRouteId?: string | null;
   mobileMenuOpen?: boolean;
   onShowMobileMenu?: () => void;
+  onHideMobileMenu?: () => void;
 };
 
 export default function MyCurrentRoutes({
@@ -61,6 +70,7 @@ export default function MyCurrentRoutes({
   initialRouteId,
   mobileMenuOpen = true,
   onShowMobileMenu,
+  onHideMobileMenu,
 }: MyCurrentRoutesProps) {
   const [routes, setRoutes] = useState<ActiveRoute[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialRouteId ?? null);
@@ -72,10 +82,28 @@ export default function MyCurrentRoutes({
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [isOffline, setIsOffline] = useState(false);
+  const [routeView, setRouteView] = useState<'map' | 'climb'>('map');
+  const [profile, setProfile] = useState<ElevationProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const selected = routes.find((r) => r.id === selectedId) ?? null;
   const selectedOfflineReady = selected ? offlineReadyIds.has(selected.id) : false;
   const { position: gps, error: gpsError, watching } = useLiveGps(trackGps && !!selected);
+  const routeShapeKey = selected ? geometryKey(selected.waypoints) : '';
+  const gpsMiles = useMemo(() => {
+    if (!gps || !selected) return null;
+    const along = progressAlongRoute(selected.waypoints, gps);
+    return along.offRouteMiles < 3 ? along.miles : null;
+  }, [gps, selected]);
+
+  const setView = useCallback(
+    (view: 'map' | 'climb') => {
+      setRouteView(view);
+      if (view === 'climb') onHideMobileMenu?.();
+    },
+    [onHideMobileMenu],
+  );
 
   const refreshOfflineStatus = useCallback(async (routeList: ActiveRoute[]) => {
     const ids = new Set<string>();
@@ -147,6 +175,67 @@ export default function MyCurrentRoutes({
     if (routes.length === 0) return;
     setSelectedId((current) => pickDefaultRouteId(routes, initialRouteId ?? current));
   }, [routes, initialRouteId]);
+
+  useEffect(() => {
+    if (!selected || selected.waypoints.length < 2) {
+      setProfile(null);
+      setProfileError(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    const cached = getCachedElevation(selected.id, selected.waypoints);
+    if (cached) {
+      setProfile(cached);
+      setProfileError(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setProfile(null);
+    setProfileLoading(true);
+    setProfileError(null);
+
+    void fetch('/api/elevation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        waypoints: selected.waypoints.map((waypoint) => ({
+          lat: waypoint.lat,
+          lng: waypoint.lng,
+        })),
+      }),
+    })
+      .then(async (res) => {
+        const data = (await res.json()) as { profile?: ElevationProfile; error?: string };
+        if (!res.ok || !data.profile) {
+          throw new Error(data.error ?? 'Could not load the climb profile');
+        }
+        return data.profile;
+      })
+      .then((next) => {
+        if (cancelled) return;
+        setProfile(next);
+        saveCachedElevation(selected.id, selected.waypoints, next);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setProfile(null);
+        setProfileError(
+          err instanceof Error
+            ? err.message
+            : 'Could not load the climb profile. Try again on WiFi.',
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selected, routeShapeKey]);
 
   const refreshPois = async (id: string) => {
     setRefreshingPois(true);
@@ -314,7 +403,20 @@ export default function MyCurrentRoutes({
             <p>
               <span className="font-medium">{stats.miles.toFixed(0)} mi</span>
               <span className="text-stone-500"> · {stats.stops} stops</span>
+              {profile && (
+                <span className="text-stone-500"> · +{formatFeet(profile.gainFt)} climb</span>
+              )}
             </p>
+            <div className="flex lg:hidden">
+              <RouteViewToggle view={routeView} onChange={setView} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setView('climb')}
+              className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50"
+            >
+              {profileLoading ? 'Loading climb…' : 'View climb profile'}
+            </button>
             <p className="text-xs text-stone-500">
               Showing stops within {TOWN_MAX_MI} mi (towns) or {WATER_MAX_MI} mi (water) of your
               route. Tap icons on the map for details.
@@ -480,38 +582,74 @@ export default function MyCurrentRoutes({
         )}
       </aside>
 
-      <section className={`flex-1 relative ${mobileMenuOpen ? 'min-h-[280px] lg:min-h-0' : 'min-h-0'}`}>
+      <section className={`flex-1 relative min-h-0 ${mobileMenuOpen ? 'min-h-[280px] lg:min-h-0' : ''}`}>
         {selected ? (
           <>
-            <ActiveRouteMap
-              route={selected}
-              gps={gps}
-              defaultCenter={defaultCenter}
-              trackGps={trackGps}
-              useOfflineTiles={selectedOfflineReady}
-            />
+            <div className="pointer-events-none absolute top-3 right-3 z-[1100]">
+              <RouteViewToggle view={routeView} onChange={setView} />
+            </div>
             {!mobileMenuOpen && onShowMobileMenu && (
               <ShowMapMenuButton onClick={onShowMobileMenu} />
             )}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] flex flex-wrap justify-center gap-2 pointer-events-none px-2">
-              <span className="rounded-full bg-blue-700/95 text-white text-xs px-3 py-1.5 inline-flex items-center gap-1.5 shadow">
-                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                  <path fill="currentColor" d="M12 3L4 9v12h5v-7h6v7h5V9l-8-6z"/>
-                </svg>
-                Town
-              </span>
-              <span className="rounded-full bg-sky-600/95 text-white text-xs px-3 py-1.5 inline-flex items-center gap-1.5 shadow">
-                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                  <path fill="currentColor" d="M12 2.5c-2.2 3.5-6 8.1-6 12a6 6 0 1 0 12 0c0-3.9-3.8-8.5-6-12z"/>
-                </svg>
-                Water
-              </span>
-              {trackGps && watching && (
-                <span className="rounded-full bg-green-600/90 text-white text-xs px-3 py-1">
-                  You
-                </span>
-              )}
-            </div>
+            {routeView === 'climb' ? (
+              <div className="absolute inset-0 flex flex-col bg-stone-50">
+                {profile ? (
+                  <ElevationProfileView
+                    profile={profile}
+                    gpsMiles={gpsMiles}
+                    gps={gps}
+                  />
+                ) : (
+                  <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-stone-500">
+                    {profileLoading
+                      ? 'Drawing the climb…'
+                      : profileError ?? 'Need at least two pins to show elevation.'}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="absolute inset-0">
+                  <ActiveRouteMap
+                    route={selected}
+                    gps={gps}
+                    defaultCenter={defaultCenter}
+                    trackGps={trackGps}
+                    useOfflineTiles={selectedOfflineReady}
+                  />
+                </div>
+                {profile && (
+                  <div className="pointer-events-auto absolute inset-x-3 bottom-[3.25rem] z-[1000] h-20 overflow-hidden rounded-xl border border-stone-200 bg-white/95 shadow-md lg:bottom-16">
+                    <ElevationProfileView
+                      profile={profile}
+                      gpsMiles={gpsMiles}
+                      gps={gps}
+                      compact
+                      onExpand={() => setView('climb')}
+                    />
+                  </div>
+                )}
+                <div className="absolute bottom-3 left-1/2 z-[1000] flex -translate-x-1/2 flex-wrap justify-center gap-2 px-2 pointer-events-none">
+                  <span className="rounded-full bg-blue-700/95 text-white text-xs px-3 py-1.5 inline-flex items-center gap-1.5 shadow">
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <path fill="currentColor" d="M12 3L4 9v12h5v-7h6v7h5V9l-8-6z"/>
+                    </svg>
+                    Town
+                  </span>
+                  <span className="rounded-full bg-sky-600/95 text-white text-xs px-3 py-1.5 inline-flex items-center gap-1.5 shadow">
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <path fill="currentColor" d="M12 2.5c-2.2 3.5-6 8.1-6 12a6 6 0 1 0 12 0c0-3.9-3.8-8.5-6-12z"/>
+                    </svg>
+                    Water
+                  </span>
+                  {trackGps && watching && (
+                    <span className="rounded-full bg-green-600/90 text-white text-xs px-3 py-1">
+                      You
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </>
         ) : (
           <div className="flex h-full items-center justify-center text-stone-500 text-sm">

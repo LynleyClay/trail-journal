@@ -72,6 +72,10 @@ describe('proxy', () => {
     expect(proxy(req('/api/routes/abc123', 'DELETE')).status).toBe(200);
   });
 
+  it('allows /api/elevation without a session so climb profiles work on trail', () => {
+    expect(proxy(req('/api/elevation', 'POST')).status).toBe(200);
+  });
+
   it('allows a public GET request to /api without a session', () => {
     process.env.ADMIN_USERNAME = 'owner';
     process.env.ADMIN_PASSWORD = 's3cret';

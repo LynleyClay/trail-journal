@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -8,7 +8,6 @@ import {
   Polyline,
   Popup,
   useMap,
-  useMapEvents,
   CircleMarker,
 } from 'react-leaflet';
 import type { Waypoint } from '@/lib/routes';
@@ -21,6 +20,13 @@ import { TOPO_TILE_ATTRIBUTION, TOPO_TILE_URL, fixLeafletIcons } from '@/lib/lea
 import { guideStopIcon } from '@/lib/map-poi-icons';
 import { getGuideStopsForTrails, getTrailGuide } from '@/lib/trail-guides';
 import { InvalidateMapOnResize } from '@/components/map/InvalidateMapOnResize';
+import {
+  HOLD_MS,
+  holdMovedTooFar,
+  isDoubleTap,
+  isMapChromeTarget,
+  type PlacePoint,
+} from '@/lib/map-place-gestures';
 import 'leaflet/dist/leaflet.css';
 
 function blazeIcon(index: number, isEnd: boolean) {
@@ -92,19 +98,120 @@ function FlyToPoint({
   return null;
 }
 
-function ClickToAdd({
+function PlacePinGestures({
   enabled,
   onAdd,
 }: {
   enabled: boolean;
   onAdd: (lat: number, lng: number) => void;
 }) {
-  useMapEvents({
-    click(e) {
-      if (!enabled) return;
-      onAdd(e.latlng.lat, e.latlng.lng);
-    },
-  });
+  const map = useMap();
+  const lastTap = useRef<PlacePoint | null>(null);
+  const holdTimer = useRef<number | null>(null);
+  const holdStart = useRef<{ x: number; y: number; lat: number; lng: number } | null>(null);
+  const panning = useRef(false);
+  const ignoreUntil = useRef(0);
+  const onAddRef = useRef(onAdd);
+  onAddRef.current = onAdd;
+
+  useEffect(() => {
+    if (!enabled) return;
+    const container = map.getContainer();
+
+    const clearHold = () => {
+      if (holdTimer.current != null) {
+        window.clearTimeout(holdTimer.current);
+        holdTimer.current = null;
+      }
+      holdStart.current = null;
+    };
+
+    const place = (lat: number, lng: number) => {
+      clearHold();
+      lastTap.current = null;
+      ignoreUntil.current = Date.now() + 450;
+      onAddRef.current(lat, lng);
+    };
+
+    const pointFromEvent = (event: PointerEvent) => {
+      const latlng = map.mouseEventToLatLng(event);
+      const pixel = map.mouseEventToContainerPoint(event);
+      return {
+        lat: latlng.lat,
+        lng: latlng.lng,
+        x: pixel.x,
+        y: pixel.y,
+        time: Date.now(),
+      };
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (isMapChromeTarget(event.target)) return;
+      const point = pointFromEvent(event);
+      panning.current = false;
+      holdStart.current = point;
+      holdTimer.current = window.setTimeout(() => {
+        if (!holdStart.current || panning.current) return;
+        place(holdStart.current.lat, holdStart.current.lng);
+      }, HOLD_MS);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const start = holdStart.current;
+      if (!start) return;
+      const pixel = map.mouseEventToContainerPoint(event);
+      if (holdMovedTooFar(start, pixel)) {
+        panning.current = true;
+        clearHold();
+      }
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      const start = holdStart.current;
+      const wasPanning = panning.current;
+      clearHold();
+      if (wasPanning || Date.now() < ignoreUntil.current) return;
+      if (isMapChromeTarget(event.target)) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      const point = pointFromEvent(event);
+      if (isDoubleTap(lastTap.current, point)) {
+        place(point.lat, point.lng);
+        return;
+      }
+      lastTap.current = point;
+    };
+
+    const onContextMenu = (event: Event) => {
+      event.preventDefault();
+      if (isMapChromeTarget(event.target)) return;
+      if (Date.now() < ignoreUntil.current) return;
+      const start = holdStart.current;
+      if (start) place(start.lat, start.lng);
+    };
+
+    const onDragStart = () => {
+      panning.current = true;
+      clearHold();
+    };
+
+    container.addEventListener('pointerdown', onPointerDown);
+    container.addEventListener('pointermove', onPointerMove);
+    container.addEventListener('pointerup', onPointerUp);
+    container.addEventListener('pointercancel', clearHold);
+    container.addEventListener('contextmenu', onContextMenu);
+    map.on('dragstart', onDragStart);
+    return () => {
+      clearHold();
+      container.removeEventListener('pointerdown', onPointerDown);
+      container.removeEventListener('pointermove', onPointerMove);
+      container.removeEventListener('pointerup', onPointerUp);
+      container.removeEventListener('pointercancel', clearHold);
+      container.removeEventListener('contextmenu', onContextMenu);
+      map.off('dragstart', onDragStart);
+    };
+  }, [map, enabled]);
+
   return null;
 }
 
@@ -112,13 +219,11 @@ function TrailLayer({
   trail,
   connected,
   highlighted,
-  onTrailClick,
   onHover,
 }: {
   trail: LongTrail;
   connected: boolean;
   highlighted: boolean;
-  onTrailClick: (id: string, lat: number, lng: number) => void;
   onHover: (id: string | null) => void;
 }) {
   const positions = useMemo(() => trailPositions(trail), [trail]);
@@ -126,12 +231,6 @@ function TrailLayer({
   const opacity = connected ? 0.98 : highlighted ? 0.95 : 0.82;
 
   const handlers = {
-    click: (e: { originalEvent: Event; latlng: { lat: number; lng: number } }) => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const L = require('leaflet') as typeof import('leaflet');
-      L.DomEvent.stopPropagation(e as unknown as L.LeafletMouseEvent);
-      onTrailClick(trail.id, e.latlng.lat, e.latlng.lng);
-    },
     mouseover: () => onHover(trail.id),
     mouseout: () => onHover(null),
   };
@@ -178,7 +277,7 @@ function TrailLayer({
                 {trail.termini[0]} → {trail.termini[1]}
               </p>
               <p className="text-sm text-stone-500">
-                {trail.miles.toLocaleString()} mi · tap two points to use a stretch
+                {trail.miles.toLocaleString()} mi · double-tap or hold two points for a stretch
               </p>
             </Popup>
           </CircleMarker>
@@ -209,7 +308,6 @@ type TrailMapProps = {
   highlightedTrailId: string | null;
   onAddWaypoint: (lat: number, lng: number) => void;
   onMoveWaypoint: (id: string, lat: number, lng: number) => void;
-  onTrailClick: (id: string, lat: number, lng: number) => void;
   onHoverTrail: (id: string | null) => void;
   fitKey: number;
   focusPoint?: { lat: number; lng: number; key: number };
@@ -224,7 +322,6 @@ export function TrailMap({
   highlightedTrailId,
   onAddWaypoint,
   onMoveWaypoint,
-  onTrailClick,
   onHoverTrail,
   fitKey,
   focusPoint,
@@ -263,6 +360,7 @@ export function TrailMap({
       zoom={4}
       className="h-full w-full"
       scrollWheelZoom
+      doubleClickZoom={false}
     >
       <TileLayer attribution={TOPO_TILE_ATTRIBUTION} url={TOPO_TILE_URL} maxZoom={17} />
       <InvalidateMapOnResize />
@@ -275,7 +373,7 @@ export function TrailMap({
           focusKey={focusPoint.key}
         />
       )}
-      <ClickToAdd enabled onAdd={onAddWaypoint} />
+      <PlacePinGestures enabled onAdd={onAddWaypoint} />
 
       {sortedTrails.map((trail) => (
         <TrailLayer
@@ -283,7 +381,6 @@ export function TrailMap({
           trail={trail}
           connected={connectedTrailIds.includes(trail.id)}
           highlighted={highlightedTrailId === trail.id || selectedTrailId === trail.id}
-          onTrailClick={onTrailClick}
           onHover={onHoverTrail}
         />
       ))}
