@@ -11,7 +11,7 @@ type SignupFormProps = {
 
 export default function SignupForm({ ownerTrailName, signedInAs }: SignupFormProps) {
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get('returnTo') ?? '/onboarding';
+  const returnTo = searchParams.get('returnTo') ?? '/map';
   const [trailName, setTrailName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

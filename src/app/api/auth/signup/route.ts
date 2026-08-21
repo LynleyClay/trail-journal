@@ -91,7 +91,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       username: slug,
       displayName: trailName,
       passwordHash,
-      onboardingDone: false,
+      onboardingDone: true,
     });
     const token = signUserSession(user.id);
     const res = NextResponse.json({ ok: true, userId: user.id, username: user.username });

@@ -6,10 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { FeatureCollection } from 'geojson';
 import type { Post } from '@/lib/posts';
 import MapView from '@/components/MapViewLoader';
+import { JournalTrailsMap } from '@/components/map/JournalTrailsMap';
 import RoutePlanner from '@/components/planner/RoutePlannerLoader';
 import MyCurrentRoutes from '@/components/active/MyCurrentRoutesLoader';
 import { ShowMapMenuButton } from '@/components/map/ShowMapMenuButton';
-import { TramilyHikerList, type TramilyHiker } from '@/components/profile/TramilyHikerList';
+import { TramilyHikerList, type TramilyHiker, type TramilyMap } from '@/components/profile/TramilyHikerList';
 import type { CompletedTrailPath } from '@/lib/completed-trails';
 
 type MapTab = 'journal' | 'friends' | 'planner' | 'active';
@@ -24,16 +25,18 @@ type MapPageTabsProps = {
   isLoggedIn: boolean;
   ownerDisplayName: string;
   hikers: TramilyHiker[];
+  tramilyMaps?: TramilyMap[];
+  completedTrailIds?: string[];
 };
 
 const TAB_COPY: Record<MapTab, { label: string; description: string }> = {
   journal: {
     label: 'My Trails',
-    description: "Trails I've hiked, with photos and journal entries pinned to where they happened. Finish a current route to add it here.",
+    description: 'Trails I\'ve hiked. Add any long trail, or draw one you walked yourself.',
   },
   friends: {
     label: 'Tramily',
-    description: 'Hikers in your tramily — trail family — and their journal entries on the map.',
+    description: 'Add tramily members to follow along on their journeys.',
   },
   planner: {
     label: 'Plan Routes',
@@ -86,12 +89,16 @@ export default function MapPageTabs({
   isLoggedIn,
   ownerDisplayName,
   hikers = [],
+  tramilyMaps = [],
+  completedTrailIds = [],
 }: MapPageTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const routeParam = searchParams.get('route');
   const [activeTab, setActiveTab] = useState<MapTab>(() => tabFromParam(tabParam));
+  const firstTramily = hikers.find((hiker) => hiker.inTramily)?.username ?? null;
+  const [selectedTramily, setSelectedTramily] = useState<string | null>(firstTramily);
   const canCollapseMenu = activeTab === 'planner' || activeTab === 'active' || activeTab === 'friends';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -128,7 +135,8 @@ export default function MapPageTabs({
     [switchTab],
   );
 
-  const journalPosts = activeTab === 'friends' ? friendsPosts : myPosts;
+  const viewedTramily =
+    tramilyMaps.find((map) => map.username === selectedTramily) ?? tramilyMaps[0] ?? null;
   const journalDescription = isLoggedIn
     ? TAB_COPY[activeTab].description
     : activeTab === 'journal'
@@ -196,7 +204,7 @@ export default function MapPageTabs({
           <>
             {activeTab === 'friends' && !isLoggedIn ? (
               <GuestPrompt returnTo="/map?tab=tramily">
-                Create an account to add hikers as tramily and see their trails here.
+                Create an account to add tramily members to follow along on their journeys.
               </GuestPrompt>
             ) : activeTab === 'friends' ? (
               <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
@@ -207,43 +215,50 @@ export default function MapPageTabs({
                 >
                   <p className="text-sm font-medium text-stone-900">Your tramily</p>
                   <p className="text-sm text-stone-600">
-                    Add hikers as tramily to pin their journal on this map.
+                    Add tramily members to follow along on their journeys.
                   </p>
-                  <TramilyHikerList hikers={hikers} isLoggedIn={isLoggedIn} />
+                  <TramilyHikerList
+                    hikers={hikers}
+                    isLoggedIn={isLoggedIn}
+                    selectedUsername={viewedTramily?.username ?? selectedTramily}
+                    onSelect={setSelectedTramily}
+                  />
                 </aside>
                 <section className={`flex-1 relative min-h-0 ${mobileMenuOpen ? 'min-h-[280px] lg:min-h-0' : ''}`}>
                   {!mobileMenuOpen && (
                     <ShowMapMenuButton onClick={() => setMobileMenuOpen(true)} />
                   )}
-                  {friendsPosts.length === 0 ? (
-                    <div className="flex h-full items-center justify-center px-4 text-center text-stone-500 text-sm">
-                      {hikers.some((hiker) => hiker.inTramily)
-                        ? 'No journal entries from your tramily yet.'
-                        : 'Add hikers as tramily to see their trails on the map.'}
-                    </div>
-                  ) : (
+                  {viewedTramily ? (
                     <div className="absolute inset-0">
+                      <div className="pointer-events-none absolute top-3 left-3 z-[1100] rounded-md bg-white/90 px-3 py-1.5 text-xs font-medium text-stone-700 shadow-sm">
+                        Viewing {viewedTramily.displayName}&apos;s map
+                      </div>
                       <MapView
-                        posts={friendsPosts}
-                        trailGeoJsons={trailGeoJsons}
+                        posts={viewedTramily.posts}
+                        trailGeoJsons={viewedTramily.trailGeoJsons}
+                        completedRoutes={viewedTramily.completedRoutes}
                         defaultCenter={defaultCenter}
                         defaultZoom={defaultZoom}
                       />
+                    </div>
+                  ) : (
+                    <div className="flex h-full items-center justify-center px-4 text-center text-stone-500 text-sm">
+                      Add tramily members to follow along on their journeys.
                     </div>
                   )}
                 </section>
               </div>
             ) : (
               <div className="flex-1 relative min-h-0">
-                <div className="absolute inset-0">
-                  <MapView
-                    posts={journalPosts}
-                    trailGeoJsons={trailGeoJsons}
-                    completedRoutes={completedRoutes}
-                    defaultCenter={defaultCenter}
-                    defaultZoom={defaultZoom}
-                  />
-                </div>
+                <JournalTrailsMap
+                  posts={myPosts}
+                  trailGeoJsons={trailGeoJsons}
+                  completedRoutes={completedRoutes}
+                  defaultCenter={defaultCenter}
+                  defaultZoom={defaultZoom}
+                  completedTrailIds={completedTrailIds}
+                  canEdit={isLoggedIn}
+                />
               </div>
             )}
           </>

@@ -50,15 +50,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'connectedTrailIds must be an array' }, { status: 400 });
   }
 
+  const status = data.status === 'completed' ? 'completed' : 'active';
+
   try {
     let resupply: Awaited<ReturnType<typeof fetchRoutePois>>['resupply'] = [];
     let water: Awaited<ReturnType<typeof fetchRoutePois>>['water'] = [];
-    try {
-      const pois = await fetchRoutePois(waypoints);
-      resupply = pois.resupply;
-      water = pois.water;
-    } catch (poiErr) {
-      console.error('POI lookup failed, saving route without towns/water:', poiErr);
+    if (status !== 'completed') {
+      try {
+        const pois = await fetchRoutePois(waypoints);
+        resupply = pois.resupply;
+        water = pois.water;
+      } catch (poiErr) {
+        console.error('POI lookup failed, saving route without towns/water:', poiErr);
+      }
     }
     const route = await createActiveRoute({
       name,
@@ -67,6 +71,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       resupply,
       water,
       userId,
+      status,
     });
     revalidateTag('active-routes-data', { expire: 0 });
     return NextResponse.json({ route }, { status: 201 });

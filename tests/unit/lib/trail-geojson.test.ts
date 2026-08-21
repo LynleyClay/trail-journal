@@ -20,4 +20,10 @@ describe('loadTrailGeoJsonsForUser', () => {
   it('returns nothing when the hiker has no completed long trails', () => {
     expect(loadTrailGeoJsonsForUser([])).toEqual({});
   });
+
+  it('can overlay any catalog trail, not only AT, PCT, and CDT', () => {
+    const trails = loadTrailGeoJsonsForUser(['nct']);
+    expect(Object.keys(trails)).toEqual(['NCT']);
+    expect(trails.NCT?.features.length).toBeGreaterThan(0);
+  });
 });

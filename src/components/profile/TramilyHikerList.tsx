@@ -1,9 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import FollowButton from '@/components/profile/FollowButton';
+
+import type { Post } from '@/lib/posts';
+import type { FeatureCollection } from 'geojson';
+import type { CompletedTrailPath } from '@/lib/completed-trails';
 
 export type TramilyHiker = {
   username: string;
@@ -11,12 +14,27 @@ export type TramilyHiker = {
   inTramily: boolean;
 };
 
+export type TramilyMap = {
+  username: string;
+  displayName: string;
+  posts: Post[];
+  trailGeoJsons: Record<string, FeatureCollection>;
+  completedRoutes: CompletedTrailPath[];
+};
+
 type TramilyHikerListProps = {
   hikers: TramilyHiker[];
   isLoggedIn: boolean;
+  selectedUsername?: string | null;
+  onSelect?: (username: string) => void;
 };
 
-export function TramilyHikerList({ hikers, isLoggedIn }: TramilyHikerListProps) {
+export function TramilyHikerList({
+  hikers,
+  isLoggedIn,
+  selectedUsername,
+  onSelect,
+}: TramilyHikerListProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [lookupError, setLookupError] = useState('');
@@ -82,7 +100,7 @@ export function TramilyHikerList({ hikers, isLoggedIn }: TramilyHikerListProps) 
 
       {hikers.length === 0 && !needle ? (
         <p className="text-sm text-stone-600 bg-white rounded-lg border border-stone-200 px-3 py-2">
-          Search a trail name to add them as tramily, or wait until they create an account.
+          Search a trail name to add tramily members to follow along on their journeys.
         </p>
       ) : matches.length === 0 ? (
         <div className="space-y-2">
@@ -104,14 +122,24 @@ export function TramilyHikerList({ hikers, isLoggedIn }: TramilyHikerListProps) 
             <li key={hiker.username}>
               <div
                 className={`rounded-lg border px-3 py-2 ${
-                  hiker.inTramily ? 'border-emerald-400 bg-emerald-50' : 'border-stone-200 bg-white'
+                  selectedUsername === hiker.username
+                    ? 'border-emerald-400 bg-emerald-50'
+                    : hiker.inTramily
+                      ? 'border-stone-300 bg-white'
+                      : 'border-stone-200 bg-white'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <Link href={`/u/${hiker.username}`} className="min-w-0 hover:text-emerald-800">
+                  <button
+                    type="button"
+                    onClick={() => onSelect?.(hiker.username)}
+                    className="min-w-0 text-left hover:text-emerald-800"
+                  >
                     <span className="block text-sm font-medium text-stone-900">{hiker.displayName}</span>
-                    <span className="block text-xs text-stone-500">Trail name @{hiker.username}</span>
-                  </Link>
+                    <span className="block text-xs text-stone-500">
+                      {hiker.inTramily ? 'Tap to view their trail map' : `Trail name @${hiker.username}`}
+                    </span>
+                  </button>
                   <FollowButton
                     username={hiker.username}
                     initialFollowing={hiker.inTramily}

@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import type { FeatureCollection } from 'geojson';
 import type { Post } from '@/lib/posts';
 import { photoUrl } from '@/lib/photo-url';
 import { TILE_URL, TILE_ATTRIBUTION, fixLeafletIcons } from '@/lib/leaflet-config';
 import { postMarkerPosition } from '@/lib/post-location';
+import { LONG_TRAILS } from '@/lib/long-trails';
 import type { CompletedTrailPath } from '@/lib/completed-trails';
 import { Lightbox } from './Lightbox';
 import 'leaflet/dist/leaflet.css';
@@ -17,6 +18,9 @@ interface MapViewProps {
   defaultCenter: [number, number];
   defaultZoom: number;
   completedRoutes?: CompletedTrailPath[];
+  drawMode?: boolean;
+  draftPath?: [number, number][];
+  onDrawClick?: (lat: number, lng: number) => void;
 }
 
 interface LightboxState {
@@ -27,6 +31,22 @@ interface LightboxState {
 // Fits the initial view to all trail lines so every trail is visible on
 // load regardless of screen size, rather than relying on a fixed zoom
 // that only happens to work at one viewport width.
+function DrawClicks({
+  enabled,
+  onClick,
+}: {
+  enabled: boolean;
+  onClick?: (lat: number, lng: number) => void;
+}) {
+  useMapEvents({
+    click(event) {
+      if (!enabled || !onClick) return;
+      onClick(event.latlng.lat, event.latlng.lng);
+    },
+  });
+  return null;
+}
+
 function FitAllTrails({
   trailGeoJsons,
   routes,
@@ -61,6 +81,9 @@ export default function MapView({
   defaultCenter,
   defaultZoom,
   completedRoutes = [],
+  drawMode = false,
+  draftPath = [],
+  onDrawClick,
 }: MapViewProps) {
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
 
@@ -68,11 +91,9 @@ export default function MapView({
     fixLeafletIcons();
   }, []);
 
-  const TRAIL_COLORS: Record<string, string> = {
-    PCT: '#10b981',
-    CDT: '#f59e0b',
-    AT: '#3b82f6',
-  };
+  const TRAIL_COLORS: Record<string, string> = Object.fromEntries(
+    LONG_TRAILS.map((trail) => [trail.abbrev, trail.color]),
+  );
 
   return (
     <>
@@ -83,6 +104,7 @@ export default function MapView({
         scrollWheelZoom
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+        <DrawClicks enabled={drawMode} onClick={onDrawClick} />
         <FitAllTrails
           trailGeoJsons={trailGeoJsons}
           routes={[
@@ -97,6 +119,16 @@ export default function MapView({
             data={geoJson}
             style={{ color: TRAIL_COLORS[name] ?? '#64748b', weight: 2, opacity: 0.7 }}
           />
+        ))}
+
+        {draftPath.length > 1 && (
+          <Polyline
+            positions={draftPath}
+            pathOptions={{ color: '#059669', weight: 4, dashArray: '8 8', opacity: 0.9 }}
+          />
+        )}
+        {draftPath.map((point, index) => (
+          <Marker key={`draft-${index}`} position={point} />
         ))}
 
         {completedRoutes.map((route) => (

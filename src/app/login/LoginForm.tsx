@@ -28,7 +28,7 @@ export default function LoginForm({ ownerTrailName }: { ownerTrailName: string }
         setError(data.error ?? 'Login failed');
         return;
       }
-      router.push(data.onboardingDone === false ? '/onboarding' : returnTo);
+      router.push(returnTo);
       router.refresh();
     } finally {
       setLoading(false);

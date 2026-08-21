@@ -33,6 +33,7 @@ export type CreateActiveRouteInput = {
   resupply: RoutePoi[];
   water: RoutePoi[];
   userId: string;
+  status?: ActiveRoute['status'];
 };
 
 const DATA_FILE = path.join(process.cwd(), 'content', 'data', 'active-routes.json');
@@ -104,7 +105,7 @@ export async function createActiveRoute(input: CreateActiveRouteInput): Promise<
     waypoints: input.waypoints,
     connectedTrailIds: input.connectedTrailIds,
     approvedAt: new Date().toISOString(),
-    status: 'active',
+    status: input.status ?? 'active',
     resupply: input.resupply,
     water: input.water,
     userId: input.userId,
