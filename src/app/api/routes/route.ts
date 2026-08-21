@@ -3,7 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { createActiveRoute, getActiveRoutes } from '@/lib/active-routes';
 import type { Waypoint } from '@/lib/routes';
 import { fetchRoutePois } from '@/lib/overpass';
-import { getRoutesUserId } from '@/lib/routes-user';
+import { getRoutesAuthorId, getRoutesUserId } from '@/lib/routes-user';
 
 function validateWaypoints(raw: unknown): raw is Waypoint[] {
   if (!Array.isArray(raw) || raw.length < 2) return false;
@@ -25,7 +25,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const userId = await getRoutesUserId(request);
+  const userId = await getRoutesAuthorId(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
 
   let body: unknown;
   try {

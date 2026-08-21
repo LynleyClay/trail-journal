@@ -18,11 +18,17 @@ export function SiteHeaderNav({ user }: SiteHeaderNavProps) {
   }
 
   return (
-    <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm font-medium">
-      <Link href="/" className="text-stone-600 hover:text-emerald-700 transition-colors">
+    <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-sm font-medium">
+      <Link
+        href="/"
+        className="hidden lg:inline text-stone-600 hover:text-emerald-700 transition-colors"
+      >
         Posts
       </Link>
-      <Link href="/map" className="text-stone-600 hover:text-emerald-700 transition-colors">
+      <Link
+        href="/map"
+        className="hidden lg:inline text-stone-600 hover:text-emerald-700 transition-colors"
+      >
         Map
       </Link>
       {user ? (
@@ -31,12 +37,12 @@ export function SiteHeaderNav({ user }: SiteHeaderNavProps) {
             href={`/u/${user.username}`}
             className="text-stone-600 hover:text-emerald-700 transition-colors"
           >
-            Profile
+            {user.displayName}
           </Link>
           <Link
             href="/admin/new"
             prefetch={false}
-            className="text-emerald-700 hover:text-emerald-900 transition-colors"
+            className="hidden lg:inline text-emerald-700 hover:text-emerald-900 transition-colors"
           >
             + New Post
           </Link>
@@ -50,15 +56,14 @@ export function SiteHeaderNav({ user }: SiteHeaderNavProps) {
         </>
       ) : (
         <>
-          <Link
-            href="/admin/new"
-            prefetch={false}
-            className="text-emerald-700 hover:text-emerald-900 transition-colors"
-          >
-            + New Post
-          </Link>
           <Link href="/login" className="text-stone-500 hover:text-stone-700 transition-colors">
             Sign in
+          </Link>
+          <Link
+            href="/signup"
+            className="rounded-md bg-emerald-600 px-3 py-1.5 text-white hover:bg-emerald-700 transition-colors"
+          >
+            Create account
           </Link>
         </>
       )}

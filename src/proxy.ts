@@ -35,13 +35,12 @@ export function proxy(request: NextRequest): NextResponse {
   }
 
   const isAdminPage = pathname.startsWith('/admin');
-  const isPersonalPlannerApi =
-    pathname.startsWith('/api/routes') || pathname.startsWith('/api/elevation');
+  const isElevationApi = pathname.startsWith('/api/elevation');
   const isMutatingApi =
-    pathname.startsWith('/api') && MUTATING_METHODS.has(request.method) && !isPersonalPlannerApi;
+    pathname.startsWith('/api') && MUTATING_METHODS.has(request.method) && !isElevationApi;
 
-  if (isAdminPage && !isAdminAuthenticated(request)) {
-    const loginUrl = new URL('/admin/login', request.url);
+  if (isAdminPage && !isAnyAuthenticated(request)) {
+    const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('returnTo', pathname);
     return NextResponse.redirect(loginUrl);
   }

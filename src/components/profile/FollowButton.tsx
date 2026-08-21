@@ -16,7 +16,7 @@ export default function FollowButton({ username, initialFollowing, isLoggedIn }:
 
   async function toggleFollow() {
     if (!isLoggedIn) {
-      router.push(`/login?returnTo=/u/${username}`);
+      router.push(`/signup?returnTo=/u/${username}`);
       return;
     }
     setLoading(true);

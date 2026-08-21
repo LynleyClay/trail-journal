@@ -18,6 +18,7 @@ type MapPageTabsProps = {
   defaultCenter: [number, number];
   defaultZoom: number;
   isLoggedIn: boolean;
+  ownerDisplayName: string;
 };
 
 const TAB_COPY: Record<MapTab, { label: string; description: string }> = {
@@ -46,6 +47,23 @@ function tabFromParam(tab: string | null): MapTab {
   return 'journal';
 }
 
+function signupHref(returnTo: string): string {
+  return `/signup?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+function GuestPrompt({ returnTo, children }: { returnTo: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-1 items-center justify-center px-4 text-center text-stone-500 text-sm">
+      <p>
+        {children}{' '}
+        <Link href={signupHref(returnTo)} className="text-emerald-700 hover:underline">
+          Create an account
+        </Link>
+      </p>
+    </div>
+  );
+}
+
 function tabUrl(tab: MapTab, routeId?: string): string {
   if (tab === 'journal') return '/map';
   if (tab === 'friends') return '/map?tab=friends';
@@ -60,6 +78,7 @@ export default function MapPageTabs({
   defaultCenter,
   defaultZoom,
   isLoggedIn,
+  ownerDisplayName,
 }: MapPageTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -102,11 +121,24 @@ export default function MapPageTabs({
     [switchTab],
   );
 
-  const copy = TAB_COPY[activeTab];
   const journalPosts = activeTab === 'friends' ? friendsPosts : myPosts;
+  const journalDescription = isLoggedIn
+    ? TAB_COPY[activeTab].description
+    : activeTab === 'journal'
+      ? `${ownerDisplayName}'s trails, with photos and journal entries pinned to where they happened.`
+      : TAB_COPY[activeTab].description;
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
+      {!isLoggedIn && (
+        <div className="shrink-0 border-b border-emerald-100 bg-emerald-50 px-4 py-2 text-sm text-emerald-900">
+          You&apos;re looking at {ownerDisplayName}&apos;s public map.{' '}
+          <Link href={signupHref('/map')} className="font-medium underline hover:text-emerald-700">
+            Create an account
+          </Link>{' '}
+          to add your own routes and posts.
+        </div>
+      )}
       <div
         className={`border-b border-stone-200 bg-white px-4 py-3 shrink-0 ${
           canCollapseMenu && !mobileMenuOpen ? 'hidden lg:block' : ''
@@ -115,7 +147,7 @@ export default function MapPageTabs({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-stone-900">Trail Map</h1>
-            <p className="text-sm text-stone-500 mb-3">{copy.description}</p>
+            <p className="text-sm text-stone-500 mb-3">{journalDescription}</p>
           </div>
           {canCollapseMenu && (
             <button
@@ -156,36 +188,40 @@ export default function MapPageTabs({
         {(activeTab === 'journal' || activeTab === 'friends') && (
           <>
             {activeTab === 'friends' && !isLoggedIn ? (
-              <div className="flex flex-1 items-center justify-center px-4 text-center text-stone-500 text-sm">
-                <p>
-                  Create an account and follow other hikers to see their trails here.{' '}
-                  <Link href="/signup?returnTo=/map?tab=friends" className="text-emerald-700 hover:underline">
-                    Sign up
-                  </Link>
-                </p>
-              </div>
+              <GuestPrompt returnTo="/map?tab=friends">
+                Create an account and follow other hikers to see their trails here.
+              </GuestPrompt>
             ) : activeTab === 'friends' && friendsPosts.length === 0 ? (
               <div className="flex flex-1 items-center justify-center px-4 text-center text-stone-500 text-sm">
                 Follow hikers from their public profiles to see their entries here.
               </div>
             ) : (
-              <MapView
-                posts={journalPosts}
-                trailGeoJsons={trailGeoJsons}
-                defaultCenter={defaultCenter}
-                defaultZoom={defaultZoom}
-              />
+              <div className="flex-1 relative min-h-0">
+                <div className="absolute inset-0">
+                  <MapView
+                    posts={journalPosts}
+                    trailGeoJsons={trailGeoJsons}
+                    defaultCenter={defaultCenter}
+                    defaultZoom={defaultZoom}
+                  />
+                </div>
+              </div>
             )}
           </>
         )}
-        {activeTab === 'planner' && (
-          <RoutePlanner
-            defaultCenter={defaultCenter}
-            onRouteApproved={handleRouteApproved}
-            mobileMenuOpen={mobileMenuOpen}
-            onShowMobileMenu={() => setMobileMenuOpen(true)}
-          />
-        )}
+        {activeTab === 'planner' &&
+          (isLoggedIn ? (
+            <RoutePlanner
+              defaultCenter={defaultCenter}
+              onRouteApproved={handleRouteApproved}
+              mobileMenuOpen={mobileMenuOpen}
+              onShowMobileMenu={() => setMobileMenuOpen(true)}
+            />
+          ) : (
+            <GuestPrompt returnTo="/map?tab=planner">
+              Create an account to plan routes and pin them on your own map.
+            </GuestPrompt>
+          ))}
         {activeTab === 'active' && (
           <MyCurrentRoutes
             defaultCenter={defaultCenter}
@@ -193,6 +229,8 @@ export default function MapPageTabs({
             mobileMenuOpen={mobileMenuOpen}
             onShowMobileMenu={() => setMobileMenuOpen(true)}
             onHideMobileMenu={() => setMobileMenuOpen(false)}
+            isLoggedIn={isLoggedIn}
+            ownerDisplayName={ownerDisplayName}
           />
         )}
       </div>

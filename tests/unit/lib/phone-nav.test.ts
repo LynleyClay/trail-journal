@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { phoneNavActive } from '@/lib/phone-nav';
+import { phoneMapHref, phoneNavActive } from '@/lib/phone-nav';
 import { todayIsoDate } from '@/lib/offline/drafts';
 
 describe('phoneNavActive', () => {
@@ -17,6 +17,16 @@ describe('phoneNavActive', () => {
   it('treats everything else as Journal', () => {
     expect(phoneNavActive('/')).toBe('journal');
     expect(phoneNavActive('/posts/foo')).toBe('journal');
+  });
+});
+
+describe('phoneMapHref', () => {
+  it('sends guests to the public trail map', () => {
+    expect(phoneMapHref(false)).toBe('/map');
+  });
+
+  it('sends signed-in hikers to their current routes', () => {
+    expect(phoneMapHref(true)).toBe('/map?tab=active');
   });
 });
 

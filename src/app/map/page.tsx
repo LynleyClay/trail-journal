@@ -2,19 +2,20 @@ import { Suspense } from 'react';
 import { readConfig } from '@/lib/config';
 import { getPublishedPostsForFollowing, getPublishedPostsForUser } from '@/lib/posts';
 import { getDefaultJournalPosts } from '@/lib/default-journal';
-import { loadTrailGeoJsons, loadTrailGeoJsonsForUser } from '@/lib/trail-geojson';
+import { loadTrailGeoJsonsForUser } from '@/lib/trail-geojson';
 import { getCurrentUser } from '@/lib/user-session';
+import { getSiteOwner, getSiteOwnerTrailIds } from '@/lib/site-owner';
 import MapPageTabs from '@/components/map/MapPageTabsLoader';
 
 export default async function MapPage() {
   const config = readConfig();
   const user = await getCurrentUser();
+  const owner = getSiteOwner();
 
   const myPosts = user ? await getPublishedPostsForUser(user.id) : await getDefaultJournalPosts();
   const friendsPosts = user ? await getPublishedPostsForFollowing(user.id) : [];
-  const trailGeoJsons = user
-    ? loadTrailGeoJsonsForUser(user.trailsCompleted)
-    : loadTrailGeoJsons();
+  const trailIds = user ? user.trailsCompleted : await getSiteOwnerTrailIds();
+  const trailGeoJsons = loadTrailGeoJsonsForUser(trailIds);
 
   return (
     <main className="flex flex-1 flex-col min-h-0">
@@ -32,6 +33,7 @@ export default async function MapPage() {
           defaultCenter={config.map.defaultCenter}
           defaultZoom={config.map.defaultZoom}
           isLoggedIn={!!user}
+          ownerDisplayName={owner.displayName}
         />
       </Suspense>
     </main>

@@ -2,15 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { phoneNavActive, type PhoneNavId } from '@/lib/phone-nav';
+import { phoneMapHref, phoneNavActive, type PhoneNavId } from '@/lib/phone-nav';
 
 const ITEMS: { id: PhoneNavId; href: string; label: string; icon: typeof JournalIcon }[] = [
   { id: 'journal', href: '/', label: 'Journal', icon: JournalIcon },
-  { id: 'map', href: '/map?tab=active', label: 'Map', icon: MapIcon },
+  { id: 'map', href: '/map', label: 'Map', icon: MapIcon },
   { id: 'note', href: '/note', label: 'Note', icon: NoteIcon },
 ];
 
-export function PhoneBottomNav() {
+type PhoneBottomNavProps = {
+  isLoggedIn: boolean;
+};
+
+export function PhoneBottomNav({ isLoggedIn }: PhoneBottomNavProps) {
   const pathname = usePathname() ?? '/';
   const active = phoneNavActive(pathname);
 
@@ -23,10 +27,11 @@ export function PhoneBottomNav() {
         {ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = item.id === active;
+          const href = item.id === 'map' ? phoneMapHref(isLoggedIn) : item.href;
           return (
             <li key={item.id}>
               <Link
-                href={item.href}
+                href={href}
                 prefetch={item.id === 'note' ? false : undefined}
                 className={`flex min-h-12 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium ${
                   isActive ? 'text-emerald-700' : 'text-stone-500'

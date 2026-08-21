@@ -7,13 +7,16 @@ import {
   updateActiveRouteStatus,
 } from '@/lib/active-routes';
 import { fetchRoutePois } from '@/lib/overpass';
-import { getRoutesUserId } from '@/lib/routes-user';
+import { getRoutesAuthorId } from '@/lib/routes-user';
 
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const userId = await getRoutesUserId(request);
+  const userId = await getRoutesAuthorId(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
   const { id } = await context.params;
   const ok = await deleteActiveRoute(id, userId);
   if (!ok) {
@@ -27,7 +30,10 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const userId = await getRoutesUserId(request);
+  const userId = await getRoutesAuthorId(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
   const { id } = await context.params;
   let body: unknown;
   try {

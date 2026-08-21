@@ -64,6 +64,8 @@ type MyCurrentRoutesProps = {
   mobileMenuOpen?: boolean;
   onShowMobileMenu?: () => void;
   onHideMobileMenu?: () => void;
+  isLoggedIn?: boolean;
+  ownerDisplayName?: string;
 };
 
 export default function MyCurrentRoutes({
@@ -72,6 +74,8 @@ export default function MyCurrentRoutes({
   mobileMenuOpen = true,
   onShowMobileMenu,
   onHideMobileMenu,
+  isLoggedIn = true,
+  ownerDisplayName = 'the owner',
 }: MyCurrentRoutesProps) {
   const [routes, setRoutes] = useState<ActiveRoute[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialRouteId ?? null);
@@ -342,8 +346,20 @@ export default function MyCurrentRoutes({
   if (routes.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-stone-500 text-sm px-6 text-center">
-        No approved routes yet. Build a route in <strong className="mx-1">Plan Routes</strong> and
-        click <strong className="mx-1">Approve route</strong> to start tracking.
+        {isLoggedIn ? (
+          <>
+            No approved routes yet. Build a route in <strong className="mx-1">Plan Routes</strong> and
+            click <strong className="mx-1">Approve route</strong> to start tracking.
+          </>
+        ) : (
+          <>
+            {ownerDisplayName} doesn&apos;t have a current route on the map yet.{' '}
+            <Link href={`/signup?returnTo=${encodeURIComponent('/map?tab=planner')}`} className="text-emerald-700 hover:underline">
+              Create an account
+            </Link>{' '}
+            to plan your own.
+          </>
+        )}
       </div>
     );
   }
@@ -435,13 +451,15 @@ export default function MyCurrentRoutes({
                 Download on WiFi — the app saves itself so you can open Trail Journal in airplane
                 mode, use My Current Routes with GPS, and write journal drafts with photos.
               </p>
-              <Link
-                href="/admin/new"
-                prefetch={false}
-                className="block w-full text-center rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
-              >
-                Write a journal draft
-              </Link>
+              {isLoggedIn && (
+                <Link
+                  href="/admin/new"
+                  prefetch={false}
+                  className="block w-full text-center rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
+                >
+                  Write a journal draft
+                </Link>
+              )}
               {selectedOfflineReady ? (
                 <div className="space-y-2">
                   <p className="text-xs text-emerald-800 font-medium">
@@ -479,14 +497,16 @@ export default function MyCurrentRoutes({
                   No towns or water on the map yet for this route. This can happen on long routes if
                   the first lookup timed out.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => refreshPois(selected.id)}
-                  disabled={refreshingPois}
-                  className="text-xs font-medium text-amber-900 underline disabled:opacity-50"
-                >
-                  {refreshingPois ? 'Searching for towns and water…' : 'Find towns & water on map'}
-                </button>
+                {isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={() => refreshPois(selected.id)}
+                    disabled={refreshingPois}
+                    className="text-xs font-medium text-amber-900 underline disabled:opacity-50"
+                  >
+                    {refreshingPois ? 'Searching for towns and water…' : 'Find towns & water on map'}
+                  </button>
+                )}
               </div>
             )}
 
@@ -540,7 +560,7 @@ export default function MyCurrentRoutes({
               </div>
             )}
 
-            {(nearbyTowns.length > 0 || nearbyWater.length > 0) && !isOffline && (
+            {isLoggedIn && (nearbyTowns.length > 0 || nearbyWater.length > 0) && !isOffline && (
               <button
                 type="button"
                 onClick={() => refreshPois(selected.id)}
@@ -572,7 +592,7 @@ export default function MyCurrentRoutes({
                 GPS works without cell service. Keep this page open while hiking.
               </p>
             )}
-            {!isOffline && (
+            {isLoggedIn && !isOffline && (
               <button
                 type="button"
                 onClick={() => removeRoute(selected.id)}

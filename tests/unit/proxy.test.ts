@@ -2,6 +2,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { sessionToken } from '@/lib/auth';
+import { signUserSession } from '@/lib/password';
 import { proxy } from '@/proxy';
 
 function req(pathname: string, method = 'GET', cookie?: string): NextRequest {
@@ -16,20 +17,26 @@ afterEach(() => {
 });
 
 describe('proxy', () => {
-  it('redirects /admin pages to the login page without a valid session', () => {
+  it('redirects /admin pages to the user login page without a valid session', () => {
     process.env.ADMIN_USERNAME = 'owner';
     process.env.ADMIN_PASSWORD = 's3cret';
     const res = proxy(req('/admin/new'));
     expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toContain('/admin/login');
+    expect(res.headers.get('location')).toContain('/login');
     expect(res.headers.get('location')).toContain('returnTo=%2Fadmin%2Fnew');
   });
 
-  it('allows /admin pages with a valid session cookie', () => {
+  it('allows /admin pages with a valid admin session cookie', () => {
     process.env.ADMIN_USERNAME = 'owner';
     process.env.ADMIN_PASSWORD = 's3cret';
     const token = sessionToken();
     const res = proxy(req('/admin/new', 'GET', `admin_session=${token}`));
+    expect(res.status).toBe(200);
+  });
+
+  it('allows /admin pages with a user account session', () => {
+    const token = signUserSession('user-1');
+    const res = proxy(req('/admin/new', 'GET', `user_id=user-1; user_session=${token}`));
     expect(res.status).toBe(200);
   });
 
@@ -67,9 +74,16 @@ describe('proxy', () => {
     expect(res.status).toBe(200);
   });
 
-  it('allows mutating /api/routes without a session (personal route planner)', () => {
-    expect(proxy(req('/api/routes', 'POST')).status).toBe(200);
-    expect(proxy(req('/api/routes/abc123', 'DELETE')).status).toBe(200);
+  it('allows a mutating /api/routes request with a valid admin session', () => {
+    process.env.ADMIN_USERNAME = 'owner';
+    process.env.ADMIN_PASSWORD = 's3cret';
+    const token = sessionToken();
+    expect(proxy(req('/api/routes', 'POST', `admin_session=${token}`)).status).toBe(200);
+  });
+
+  it('blocks mutating /api/routes without a session', () => {
+    expect(proxy(req('/api/routes', 'POST')).status).toBe(401);
+    expect(proxy(req('/api/routes/abc123', 'DELETE')).status).toBe(401);
   });
 
   it('allows /api/elevation without a session so climb profiles work on trail', () => {
