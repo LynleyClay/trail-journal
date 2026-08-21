@@ -6,6 +6,7 @@ import type { FeatureCollection } from 'geojson';
 import type { Post } from '@/lib/posts';
 import { photoUrl } from '@/lib/photo-url';
 import { TILE_URL, TILE_ATTRIBUTION, fixLeafletIcons } from '@/lib/leaflet-config';
+import { postMarkerPosition } from '@/lib/post-location';
 import { Lightbox } from './Lightbox';
 import 'leaflet/dist/leaflet.css';
 
@@ -97,14 +98,13 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
           ) : null
         )}
 
-        {posts.map((post) => (
+        {posts.map((post) => {
+          const position = postMarkerPosition(post);
+          if (!position) return null;
+          return (
           <Marker
             key={post.slug}
-            position={
-              post.photos.find((p) => p.lat && p.lng) != null
-                ? [post.photos.find((p) => p.lat && p.lng)!.lat!, post.photos.find((p) => p.lat && p.lng)!.lng!]
-                : defaultCenter
-            }
+            position={position}
           >
             <Popup>
               <div className="flex flex-col gap-1 min-w-[160px]">
@@ -133,7 +133,8 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
               </div>
             </Popup>
           </Marker>
-        ))}
+          );
+        })}
 
         {posts.flatMap((post) =>
           post.photos

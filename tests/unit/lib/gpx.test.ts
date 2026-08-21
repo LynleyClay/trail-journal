@@ -46,6 +46,23 @@ describe('parseGpx', () => {
     </trkseg></trk></gpx>`;
     expect(parseGpx(gpx)).toEqual([[34.1, -84.2]]);
   });
+
+  it('reads Strava GPX files that declare a default XML namespace', () => {
+    const strava = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx creator="StravaGPX" version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Morning Run</name>
+    <trkseg>
+      <trkpt lat="35.6118" lon="-83.4895"></trkpt>
+      <trkpt lat="35.6120" lon="-83.4900"></trkpt>
+    </trkseg>
+  </trk>
+</gpx>`;
+    expect(parseGpx(strava)).toEqual([
+      [35.6118, -83.4895],
+      [35.612, -83.49],
+    ]);
+  });
 });
 
 describe('simplifyRoute', () => {

@@ -4,6 +4,19 @@
 
 export class GpxParseError extends Error {}
 
+function pointsFromTag(doc: Document, localName: string): [number, number][] {
+  const points: [number, number][] = [];
+  const els = doc.getElementsByTagNameNS('*', localName);
+  for (let i = 0; i < els.length; i++) {
+    const el = els[i];
+    if (!el) continue;
+    const lat = parseFloat(el.getAttribute('lat') ?? '');
+    const lng = parseFloat(el.getAttribute('lon') ?? '');
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) points.push([lat, lng]);
+  }
+  return points;
+}
+
 export function parseGpx(xmlText: string): [number, number][] {
   const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
 
@@ -11,13 +24,8 @@ export function parseGpx(xmlText: string): [number, number][] {
     throw new GpxParseError('That file is not valid GPX/XML.');
   }
 
-  const points: [number, number][] = [];
-  const pointEls = doc.querySelectorAll('trkpt, rtept');
-  pointEls.forEach((el) => {
-    const lat = parseFloat(el.getAttribute('lat') ?? '');
-    const lng = parseFloat(el.getAttribute('lon') ?? '');
-    if (!isNaN(lat) && !isNaN(lng)) points.push([lat, lng]);
-  });
+  const trackOrRoute = [...pointsFromTag(doc, 'trkpt'), ...pointsFromTag(doc, 'rtept')];
+  const points = trackOrRoute.length > 0 ? trackOrRoute : pointsFromTag(doc, 'wpt');
 
   if (points.length === 0) {
     throw new GpxParseError('No track points found in that GPX file.');
