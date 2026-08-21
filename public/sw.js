@@ -1,7 +1,7 @@
 const TILE_CACHE = 'trail-journal-tiles-v1';
-const APP_CACHE = 'trail-journal-app-v6';
-const STATIC_CACHE = 'trail-journal-static-v6';
-const RUNTIME_CACHE = 'trail-journal-runtime-v6';
+const APP_CACHE = 'trail-journal-app-v7';
+const STATIC_CACHE = 'trail-journal-static-v7';
+const RUNTIME_CACHE = 'trail-journal-runtime-v7';
 
 const OFFLINE_HOME = '/map?tab=active';
 
@@ -20,7 +20,7 @@ const PRECACHE_URLS = [
   '/hike.html',
   '/hike.js',
   '/hike.css',
-  '/offline-draft.js?v=9',
+  '/offline-draft.js?v=10',
 ];
 
 const OLD_CACHES = [
@@ -29,13 +29,16 @@ const OLD_CACHES = [
   'trail-journal-app-v3',
   'trail-journal-app-v4',
   'trail-journal-app-v5',
+  'trail-journal-app-v6',
   'trail-journal-static-v2',
   'trail-journal-static-v3',
   'trail-journal-static-v4',
   'trail-journal-static-v5',
+  'trail-journal-static-v6',
   'trail-journal-runtime-v3',
   'trail-journal-runtime-v4',
   'trail-journal-runtime-v5',
+  'trail-journal-runtime-v6',
 ];
 
 self.addEventListener('install', (event) => {

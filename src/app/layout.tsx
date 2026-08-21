@@ -41,9 +41,9 @@ export default async function RootLayout({
     <html lang="en" className="h-full">
       <body className="h-dvh flex flex-col bg-white text-stone-900 antialiased overflow-hidden">
         <Script id="tj-sw-bust" strategy="beforeInteractive">
-          {`(function(){try{if(localStorage.getItem('tj-sw-bust-v7')==='1')return;localStorage.setItem('tj-sw-bust-v7','1');}catch(e){return;}var p=[];if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(r){return Promise.all(r.map(function(x){return x.unregister();}));}));if(window.caches)p.push(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return /trail-journal-(app|static|runtime)-/.test(x);}).map(function(x){return caches.delete(x);}));}));if(p.length)Promise.all(p).then(function(){location.reload();});})();`}
+          {`(function(){try{if(localStorage.getItem('tj-sw-bust-v8')==='1')return;localStorage.setItem('tj-sw-bust-v8','1');}catch(e){return;}var p=[];if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(r){return Promise.all(r.map(function(x){return x.unregister();}));}));if(window.caches)p.push(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return /trail-journal-(app|static|runtime)-/.test(x);}).map(function(x){return caches.delete(x);}));}));if(p.length)Promise.all(p).then(function(){location.reload();});})();`}
         </Script>
-        <Script src="/offline-draft.js?v=9" strategy="afterInteractive" />
+        <Script src="/offline-draft.js?v=10" strategy="afterInteractive" />
         <ServiceWorkerRegistration />
         <div className="lg:hidden shrink-0 bg-white h-[env(safe-area-inset-top)]" />
         <SiteHeader siteName={config.name} user={user} />

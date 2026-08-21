@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/user-session';
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
-    return NextResponse.json({ error: 'Sign in to follow hikers' }, { status: 401 });
+    return NextResponse.json({ error: 'Sign in to add hikers as tramily' }, { status: 401 });
   }
 
   let body: unknown;

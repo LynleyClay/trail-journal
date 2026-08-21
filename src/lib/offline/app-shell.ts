@@ -10,13 +10,13 @@ export const OFFLINE_SHELL_URLS = [
   '/hike.html',
   '/hike.js',
   '/hike.css',
-  '/offline-draft.js?v=9',
+  '/offline-draft.js?v=10',
   ...OFFLINE_APP_PAGES,
 ];
 
-export const APP_SHELL_CACHE = 'trail-journal-app-v6';
-export const STATIC_CACHE = 'trail-journal-static-v6';
-export const RUNTIME_CACHE = 'trail-journal-runtime-v6';
+export const APP_SHELL_CACHE = 'trail-journal-app-v7';
+export const STATIC_CACHE = 'trail-journal-static-v7';
+export const RUNTIME_CACHE = 'trail-journal-runtime-v7';
 
 function extractAssetPaths(html: string): string[] {
   const paths = new Set<string>();

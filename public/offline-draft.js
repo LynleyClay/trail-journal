@@ -1,6 +1,6 @@
 (function () {
   var KEY = 'trail-journal-drafts-v1';
-  var BUST = 'tj-sw-bust-v7';
+  var BUST = 'tj-sw-bust-v8';
 
   function bustStaleApp() {
     try {

@@ -7,9 +7,15 @@ type FollowButtonProps = {
   username: string;
   initialFollowing: boolean;
   isLoggedIn: boolean;
+  compact?: boolean;
 };
 
-export default function FollowButton({ username, initialFollowing, isLoggedIn }: FollowButtonProps) {
+export default function FollowButton({
+  username,
+  initialFollowing,
+  isLoggedIn,
+  compact = false,
+}: FollowButtonProps) {
   const router = useRouter();
   const [following, setFollowing] = useState(initialFollowing);
   const [loading, setLoading] = useState(false);
@@ -43,13 +49,16 @@ export default function FollowButton({ username, initialFollowing, isLoggedIn }:
       type="button"
       disabled={loading}
       onClick={() => void toggleFollow()}
-      className={`rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+      title={following ? 'In your tramily — tap to remove' : 'Add this hiker as tramily (trail family)'}
+      className={`rounded-md font-medium transition-colors disabled:opacity-50 ${
+        compact ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'
+      } ${
         following
           ? 'border border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
           : 'bg-stone-900 text-white hover:bg-stone-800'
       }`}
     >
-      {loading ? '…' : following ? 'Following' : 'Follow'}
+      {loading ? '…' : following ? 'Tramily' : 'Add as tramily'}
     </button>
   );
 }

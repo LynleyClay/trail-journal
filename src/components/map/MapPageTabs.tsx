@@ -8,6 +8,8 @@ import type { Post } from '@/lib/posts';
 import MapView from '@/components/MapViewLoader';
 import RoutePlanner from '@/components/planner/RoutePlannerLoader';
 import MyCurrentRoutes from '@/components/active/MyCurrentRoutesLoader';
+import { ShowMapMenuButton } from '@/components/map/ShowMapMenuButton';
+import { TramilyHikerList, type TramilyHiker } from '@/components/profile/TramilyHikerList';
 
 type MapTab = 'journal' | 'friends' | 'planner' | 'active';
 
@@ -19,6 +21,7 @@ type MapPageTabsProps = {
   defaultZoom: number;
   isLoggedIn: boolean;
   ownerDisplayName: string;
+  hikers: TramilyHiker[];
 };
 
 const TAB_COPY: Record<MapTab, { label: string; description: string }> = {
@@ -27,8 +30,8 @@ const TAB_COPY: Record<MapTab, { label: string; description: string }> = {
     description: "Trails I've hiked, with photos and journal entries pinned to where they happened.",
   },
   friends: {
-    label: "Friends' Trails",
-    description: 'Public journal entries from hikers you follow.',
+    label: 'Tramily',
+    description: 'Hikers in your tramily — trail family — and their journal entries on the map.',
   },
   planner: {
     label: 'Plan Routes',
@@ -41,7 +44,7 @@ const TAB_COPY: Record<MapTab, { label: string; description: string }> = {
 };
 
 function tabFromParam(tab: string | null): MapTab {
-  if (tab === 'friends') return 'friends';
+  if (tab === 'friends' || tab === 'tramily') return 'friends';
   if (tab === 'planner') return 'planner';
   if (tab === 'active') return 'active';
   return 'journal';
@@ -66,7 +69,7 @@ function GuestPrompt({ returnTo, children }: { returnTo: string; children: React
 
 function tabUrl(tab: MapTab, routeId?: string): string {
   if (tab === 'journal') return '/map';
-  if (tab === 'friends') return '/map?tab=friends';
+  if (tab === 'friends') return '/map?tab=tramily';
   if (tab === 'planner') return '/map?tab=planner';
   return routeId ? `/map?tab=active&route=${routeId}` : '/map?tab=active';
 }
@@ -79,18 +82,19 @@ export default function MapPageTabs({
   defaultZoom,
   isLoggedIn,
   ownerDisplayName,
+  hikers = [],
 }: MapPageTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const routeParam = searchParams.get('route');
   const [activeTab, setActiveTab] = useState<MapTab>(() => tabFromParam(tabParam));
-  const canCollapseMenu = activeTab === 'planner' || activeTab === 'active';
+  const canCollapseMenu = activeTab === 'planner' || activeTab === 'active' || activeTab === 'friends';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(() => {
     if (typeof window === 'undefined') return true;
     const tab = tabFromParam(tabParam);
     const phone = window.matchMedia('(max-width: 1023px)').matches;
-    return !(phone && (tab === 'planner' || tab === 'active'));
+    return !(phone && (tab === 'planner' || tab === 'active' || tab === 'friends'));
   });
 
   useEffect(() => {
@@ -99,7 +103,7 @@ export default function MapPageTabs({
 
   useEffect(() => {
     const phone = window.matchMedia('(max-width: 1023px)').matches;
-    if (phone && (activeTab === 'planner' || activeTab === 'active')) {
+    if (phone && (activeTab === 'planner' || activeTab === 'active' || activeTab === 'friends')) {
       setMobileMenuOpen(false);
       return;
     }
@@ -188,12 +192,43 @@ export default function MapPageTabs({
         {(activeTab === 'journal' || activeTab === 'friends') && (
           <>
             {activeTab === 'friends' && !isLoggedIn ? (
-              <GuestPrompt returnTo="/map?tab=friends">
-                Create an account and follow other hikers to see their trails here.
+              <GuestPrompt returnTo="/map?tab=tramily">
+                Create an account to add hikers as tramily and see their trails here.
               </GuestPrompt>
-            ) : activeTab === 'friends' && friendsPosts.length === 0 ? (
-              <div className="flex flex-1 items-center justify-center px-4 text-center text-stone-500 text-sm">
-                Follow hikers from their public profiles to see their entries here.
+            ) : activeTab === 'friends' ? (
+              <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
+                <aside
+                  className={`w-full lg:w-80 shrink-0 border-b lg:border-b-0 lg:border-r border-stone-200 bg-stone-50 p-4 flex flex-col gap-3 min-h-0 max-h-[40vh] lg:max-h-none overflow-y-auto ${
+                    mobileMenuOpen ? '' : 'hidden lg:flex'
+                  }`}
+                >
+                  <p className="text-sm font-medium text-stone-900">Your tramily</p>
+                  <p className="text-sm text-stone-600">
+                    Add hikers as tramily to pin their journal on this map.
+                  </p>
+                  <TramilyHikerList hikers={hikers} isLoggedIn={isLoggedIn} />
+                </aside>
+                <section className={`flex-1 relative min-h-0 ${mobileMenuOpen ? 'min-h-[280px] lg:min-h-0' : ''}`}>
+                  {!mobileMenuOpen && (
+                    <ShowMapMenuButton onClick={() => setMobileMenuOpen(true)} />
+                  )}
+                  {friendsPosts.length === 0 ? (
+                    <div className="flex h-full items-center justify-center px-4 text-center text-stone-500 text-sm">
+                      {hikers.some((hiker) => hiker.inTramily)
+                        ? 'No journal entries from your tramily yet.'
+                        : 'Add hikers as tramily to see their trails on the map.'}
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0">
+                      <MapView
+                        posts={friendsPosts}
+                        trailGeoJsons={trailGeoJsons}
+                        defaultCenter={defaultCenter}
+                        defaultZoom={defaultZoom}
+                      />
+                    </div>
+                  )}
+                </section>
               </div>
             ) : (
               <div className="flex-1 relative min-h-0">
