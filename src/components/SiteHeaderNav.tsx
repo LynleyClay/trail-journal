@@ -1,22 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import type { PublicUser } from '@/lib/users';
 
 type SiteHeaderNavProps = {
   user: PublicUser | null;
 };
 
+async function signOut(nextPath: string) {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', cache: 'no-store' });
+  window.location.assign(nextPath);
+}
+
 export function SiteHeaderNav({ user }: SiteHeaderNavProps) {
-  const router = useRouter();
-
-  async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/');
-    router.refresh();
-  }
-
   return (
     <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-sm font-medium">
       <Link
@@ -48,8 +44,8 @@ export function SiteHeaderNav({ user }: SiteHeaderNavProps) {
           </Link>
           <button
             type="button"
-            onClick={() => void handleLogout()}
-            className="text-stone-500 hover:text-stone-800 transition-colors"
+            onClick={() => void signOut('/')}
+            className="rounded-md px-3 py-1.5 text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
           >
             Sign out
           </button>

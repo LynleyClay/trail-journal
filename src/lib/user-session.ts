@@ -45,7 +45,12 @@ export function getUserFromRequest(request: NextRequest): Promise<User | null> {
 }
 
 export function setUserSessionCookies(
-  response: { cookies: { set: (name: string, value: string, options?: object) => void } },
+  response: {
+    cookies: {
+      set: (name: string, value: string, options?: object) => void;
+      delete?: (name: string) => void;
+    };
+  },
   userId: string,
   token: string,
 ): void {
@@ -59,10 +64,36 @@ export function setUserSessionCookies(
   response.cookies.set(USER_SESSION_COOKIE, token, opts);
 }
 
+function expireCookie(
+  response: {
+    cookies: {
+      set: (name: string, value: string, options?: object) => void;
+      delete?: (name: string) => void;
+    };
+  },
+  name: string,
+  secure?: boolean,
+): void {
+  response.cookies.set(name, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+    expires: new Date(0),
+    ...(secure ? { secure: true } : {}),
+  });
+  response.cookies.delete?.(name);
+}
+
+/** Clears hiker cookies and the older admin cookie so Sign out actually logs out. */
 export function clearUserSessionCookies(response: {
-  cookies: { set: (name: string, value: string, options?: object) => void };
+  cookies: {
+    set: (name: string, value: string, options?: object) => void;
+    delete?: (name: string) => void;
+  };
 }): void {
-  const opts = { path: '/', maxAge: 0 };
-  response.cookies.set(USER_ID_COOKIE, '', opts);
-  response.cookies.set(USER_SESSION_COOKIE, '', opts);
+  for (const name of [USER_ID_COOKIE, USER_SESSION_COOKIE, SESSION_COOKIE_NAME]) {
+    expireCookie(response, name);
+    expireCookie(response, name, true);
+  }
 }

@@ -113,7 +113,11 @@ export default function SignupForm({ ownerTrailName, signedInAs }: SignupFormPro
               type="button"
               className="text-emerald-700 hover:underline"
               onClick={() => {
-                void fetch('/api/auth/logout', { method: 'POST' }).then(() => {
+                void fetch('/api/auth/logout', {
+                  method: 'POST',
+                  credentials: 'include',
+                  cache: 'no-store',
+                }).then(() => {
                   window.location.assign('/signup');
                 });
               }}
