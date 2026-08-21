@@ -49,7 +49,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
           <div>
             <p className="text-sm text-stone-500 mb-1">Hiker profile</p>
             <h1 className="text-2xl font-bold text-stone-900">{publicUser.displayName}</h1>
-            <p className="text-sm text-stone-500 mt-1">@{publicUser.username}</p>
+            <p className="text-sm text-stone-500 mt-1">Trail name @{publicUser.username}</p>
             {publicUser.trailsCompleted.length > 0 && (
               <p className="text-sm text-stone-600 mt-2">
                 Trails hiked: {publicUser.trailsCompleted.map((id) => id.toUpperCase()).join(', ')}

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCredentials, sessionToken, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { signUserSession } from '@/lib/password';
+import { setUserSessionCookies } from '@/lib/user-session';
+import { getSiteOwnerUserId } from '@/lib/site-owner';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   let body: unknown;
@@ -27,5 +30,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     path: '/',
     maxAge: 60 * 60 * 24 * 30, // 30 days
   });
+  const ownerId = await getSiteOwnerUserId();
+  setUserSessionCookies(res, ownerId, signUserSession(ownerId));
   return res;
 }

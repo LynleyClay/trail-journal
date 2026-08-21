@@ -22,7 +22,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const target = await getUserByUsername(username.trim());
   if (!target) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Trail name not found' }, { status: 404 });
   }
 
   await followUser(currentUser.id, target.id);
@@ -37,12 +37,12 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
 
   const username = request.nextUrl.searchParams.get('username')?.trim();
   if (!username) {
-    return NextResponse.json({ error: 'username query param is required' }, { status: 400 });
+    return NextResponse.json({ error: 'trail name is required' }, { status: 400 });
   }
 
   const target = await getUserByUsername(username);
   if (!target) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Trail name not found' }, { status: 404 });
   }
 
   await unfollowUser(currentUser.id, target.id);

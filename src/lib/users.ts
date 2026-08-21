@@ -81,6 +81,18 @@ export function isValidUsername(username: string): boolean {
   return /^[a-z0-9][a-z0-9_-]{2,29}$/.test(username) && !RESERVED_USERNAMES.has(username);
 }
 
+/** The site owner can register the existing journal by setting a password once. */
+export function canClaimOwnerAccount(
+  existing: { username: string; passwordHash: string } | null,
+  ownerUsername: string,
+): boolean {
+  return (
+    !!existing &&
+    existing.username.toLowerCase() === ownerUsername.toLowerCase() &&
+    !existing.passwordHash
+  );
+}
+
 export async function getAllUsers(): Promise<User[]> {
   return readAll();
 }
@@ -103,11 +115,11 @@ export async function createUser(input: {
   onboardingDone?: boolean;
 }): Promise<User> {
   if (!isValidUsername(input.username)) {
-    throw new Error('Invalid username');
+    throw new Error('Invalid trail name');
   }
   const users = await readAll();
   if (users.some((u) => u.username.toLowerCase() === input.username.toLowerCase())) {
-    throw new Error('Username already taken');
+    throw new Error('That trail name is already taken');
   }
   const user: User = {
     id: `user-${Date.now().toString(36)}`,

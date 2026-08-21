@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { hashPassword, signUserSession, verifyPassword } from '@/lib/password';
-import { createUser, getUserByUsername, isValidUsername } from '@/lib/users';
+import { hashPassword, signUserSession } from '@/lib/password';
+import {
+  canClaimOwnerAccount,
+  createUser,
+  getUserByUsername,
+  isValidUsername,
+  updateUser,
+} from '@/lib/users';
 import { setUserSessionCookies } from '@/lib/user-session';
+import { getSiteOwnerUsername } from '@/lib/site-owner';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   let body: unknown;
@@ -18,7 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (!isValidUsername(username)) {
     return NextResponse.json(
-      { error: 'Username must be 3–30 characters: lowercase letters, numbers, _ or -' },
+      { error: 'Trail name must be 3–30 characters: lowercase letters, numbers, _ or -' },
       { status: 400 },
     );
   }
@@ -30,10 +37,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
+    const existing = await getUserByUsername(username);
+    const ownerUsername = getSiteOwnerUsername();
+    const passwordHash = hashPassword(password);
+
+    if (canClaimOwnerAccount(existing, ownerUsername) && existing) {
+      const claimed = await updateUser(existing.id, {
+        passwordHash,
+        displayName,
+        onboardingDone: true,
+      });
+      if (!claimed) {
+        return NextResponse.json({ error: 'Could not register this trail name' }, { status: 500 });
+      }
+      const token = signUserSession(claimed.id);
+      const res = NextResponse.json({
+        ok: true,
+        userId: claimed.id,
+        username: claimed.username,
+        claimedOwner: true,
+      });
+      setUserSessionCookies(res, claimed.id, token);
+      return res;
+    }
+
     const user = await createUser({
       username,
       displayName,
-      passwordHash: hashPassword(password),
+      passwordHash,
       onboardingDone: false,
     });
     const token = signUserSession(user.id);

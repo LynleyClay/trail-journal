@@ -29,3 +29,9 @@ export function isValidSession(cookieValue: string | undefined): boolean {
   if (!expected || !cookieValue) return false;
   return safeEqual(cookieValue, expected);
 }
+
+export function matchesAdminPassword(password: string): boolean {
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected) return false;
+  return safeEqual(password, expected);
+}

@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
-export default function SignupForm() {
+type SignupFormProps = {
+  ownerTrailName: string;
+};
+
+export default function SignupForm({ ownerTrailName }: SignupFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo') ?? '/onboarding';
@@ -24,12 +28,12 @@ export default function SignupForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, displayName, password }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; claimedOwner?: boolean };
       if (!res.ok) {
         setError(data.error ?? 'Signup failed');
         return;
       }
-      router.push(returnTo);
+      router.push(data.claimedOwner ? '/map' : returnTo);
       router.refresh();
     } finally {
       setLoading(false);
@@ -56,7 +60,7 @@ export default function SignupForm() {
         </div>
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-stone-700 mb-1">
-            Username
+            Trail name
           </label>
           <input
             id="username"
@@ -68,7 +72,13 @@ export default function SignupForm() {
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
             required
           />
-          <p className="text-xs text-stone-500 mt-1">Used in your profile URL: /u/username</p>
+          <p className="text-xs text-stone-500 mt-1">
+            What hikers call you. Used in your profile URL: /u/{username || 'trailname'}
+          </p>
+          <p className="text-xs text-stone-500 mt-1">
+            This is Lynley&apos;s journal — use trail name <strong>{ownerTrailName}</strong> to keep
+            the existing posts and routes.
+          </p>
         </div>
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-stone-700 mb-1">

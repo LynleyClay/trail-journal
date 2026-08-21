@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { verifyCredentials, sessionToken, isValidSession } from '@/lib/auth';
+import { verifyCredentials, sessionToken, isValidSession, matchesAdminPassword } from '@/lib/auth';
 
 afterEach(() => {
   delete process.env.ADMIN_USERNAME;
@@ -38,6 +38,18 @@ describe('sessionToken', () => {
 
     process.env.ADMIN_PASSWORD = 'different';
     expect(sessionToken()).not.toBe(a);
+  });
+});
+
+describe('matchesAdminPassword', () => {
+  it('accepts the configured admin password', () => {
+    process.env.ADMIN_PASSWORD = 's3cret';
+    expect(matchesAdminPassword('s3cret')).toBe(true);
+    expect(matchesAdminPassword('wrong')).toBe(false);
+  });
+
+  it('returns false when no admin password is configured', () => {
+    expect(matchesAdminPassword('s3cret')).toBe(false);
   });
 });
 
