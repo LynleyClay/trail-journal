@@ -4,11 +4,12 @@ import {
   canClaimOwnerAccount,
   createUser,
   getUserByUsername,
-  isValidUsername,
+  isValidTrailName,
+  trailNameToSlug,
   updateUser,
 } from '@/lib/users';
 import { setUserSessionCookies } from '@/lib/user-session';
-import { getSiteOwnerUsername } from '@/lib/site-owner';
+import { getSiteOwnerUser, getSiteOwnerUsername } from '@/lib/site-owner';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   let body: unknown;
@@ -19,32 +20,45 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const data = body as Record<string, unknown>;
-  const username = typeof data.username === 'string' ? data.username.trim().toLowerCase() : '';
-  const displayName = typeof data.displayName === 'string' ? data.displayName.trim() : '';
+  const trailName =
+    typeof data.trailName === 'string'
+      ? data.trailName.trim()
+      : typeof data.displayName === 'string'
+        ? data.displayName.trim()
+        : typeof data.username === 'string'
+          ? data.username.trim()
+          : '';
   const password = typeof data.password === 'string' ? data.password : '';
+  const slug = trailNameToSlug(trailName);
 
-  if (!isValidUsername(username)) {
+  if (!isValidTrailName(trailName)) {
     return NextResponse.json(
-      { error: 'Trail name must be 3–30 characters: lowercase letters, numbers, _ or -' },
+      { error: 'Trail name needs letters we can use in a profile URL (emoji is fine at the end)' },
       { status: 400 },
     );
   }
-  if (!displayName) {
-    return NextResponse.json({ error: 'Display name is required' }, { status: 400 });
-  }
-  if (password.length < 8) {
-    return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
+  if (password.length < 4) {
+    return NextResponse.json({ error: 'Password must be at least 4 characters' }, { status: 400 });
   }
 
   try {
-    const existing = await getUserByUsername(username);
     const ownerUsername = getSiteOwnerUsername();
+    const owner = await getSiteOwnerUser();
     const passwordHash = hashPassword(password);
+    const matchesOwnerTrail =
+      !!owner &&
+      (slug === owner.username ||
+        slug === 'lynley' ||
+        slug === 'lynleyclay' ||
+        slug === 'bovi' ||
+        slug === trailNameToSlug(owner.displayName));
+    const claimingOwner = canClaimOwnerAccount(owner, ownerUsername) && matchesOwnerTrail;
 
-    if (canClaimOwnerAccount(existing, ownerUsername) && existing) {
-      const claimed = await updateUser(existing.id, {
+    if (claimingOwner && owner) {
+      const claimed = await updateUser(owner.id, {
         passwordHash,
-        displayName,
+        displayName: trailName,
+        username: slug,
         onboardingDone: true,
       });
       if (!claimed) {
@@ -61,9 +75,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return res;
     }
 
+    if (matchesOwnerTrail) {
+      return NextResponse.json(
+        { error: 'That trail name is already registered. Sign in instead.' },
+        { status: 400 },
+      );
+    }
+
+    const taken = await getUserByUsername(slug);
+    if (taken) {
+      return NextResponse.json({ error: 'That trail name is already taken' }, { status: 400 });
+    }
+
     const user = await createUser({
-      username,
-      displayName,
+      username: slug,
+      displayName: trailName,
       passwordHash,
       onboardingDone: false,
     });

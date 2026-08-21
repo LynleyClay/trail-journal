@@ -2,8 +2,8 @@ import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { isValidSession, SESSION_COOKIE_NAME } from '@/lib/auth';
 import { verifyUserSession } from '@/lib/password';
-import { getUserById, getUserByUsername, toPublicUser, type PublicUser, type User } from '@/lib/users';
-import { getSiteOwnerUsername } from '@/lib/site-owner';
+import { getUserById, toPublicUser, type PublicUser, type User } from '@/lib/users';
+import { getSiteOwnerUser } from '@/lib/site-owner';
 
 export const USER_SESSION_COOKIE = 'user_session';
 export const USER_ID_COOKIE = 'user_id';
@@ -17,7 +17,7 @@ async function userFromSession(
     return getUserById(userId);
   }
   if (isValidSession(adminCookie)) {
-    return getUserByUsername(getSiteOwnerUsername());
+    return getSiteOwnerUser();
   }
   return null;
 }

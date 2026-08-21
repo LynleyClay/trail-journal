@@ -11,6 +11,7 @@ import MapView from '@/components/MapViewLoader';
 import { PostCard } from '@/components/PostCard';
 import ShareProfileButton from '@/components/profile/ShareProfileButton';
 import FollowButton from '@/components/profile/FollowButton';
+import { TrailNameForm } from '@/components/profile/TrailNameForm';
 
 type PageProps = {
   params: Promise<{ username: string }>;
@@ -49,11 +50,14 @@ export default async function PublicProfilePage({ params }: PageProps) {
           <div>
             <p className="text-sm text-stone-500 mb-1">Hiker profile</p>
             <h1 className="text-2xl font-bold text-stone-900">{publicUser.displayName}</h1>
-            <p className="text-sm text-stone-500 mt-1">Trail name @{publicUser.username}</p>
+            <p className="text-sm text-stone-500 mt-1">/{publicUser.username}</p>
             {publicUser.trailsCompleted.length > 0 && (
               <p className="text-sm text-stone-600 mt-2">
                 Trails hiked: {publicUser.trailsCompleted.map((id) => id.toUpperCase()).join(', ')}
               </p>
+            )}
+            {currentUser?.id === user.id && (
+              <TrailNameForm initialTrailName={publicUser.displayName} />
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">

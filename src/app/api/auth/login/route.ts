@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, signUserSession, verifyPassword } from '@/lib/password';
 import { matchesAdminPassword } from '@/lib/auth';
-import { getUserByUsername, updateUser } from '@/lib/users';
+import { getUserByUsername, trailNameToSlug, updateUser } from '@/lib/users';
 import { setUserSessionCookies } from '@/lib/user-session';
 import { getSiteOwnerUsername } from '@/lib/site-owner';
 
@@ -14,7 +14,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const data = body as Record<string, unknown>;
-  const username = typeof data.username === 'string' ? data.username.trim().toLowerCase() : '';
+  const username = trailNameToSlug(
+    typeof data.username === 'string' ? data.username : '',
+  );
   const password = typeof data.password === 'string' ? data.password : '';
 
   if (!username || !password) {
@@ -26,16 +28,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid trail name or password' }, { status: 401 });
   }
 
-  const isOwner = user.username === getSiteOwnerUsername();
+  const isOwner = user.id === 'user-lynley' || user.username === getSiteOwnerUsername();
   const passwordOk = verifyPassword(password, user.passwordHash);
   const ownerAdminOk = isOwner && matchesAdminPassword(password);
+  const ownerFirstLogin = isOwner && !user.passwordHash;
 
-  if (!passwordOk && !ownerAdminOk) {
+  if (!passwordOk && !ownerAdminOk && !ownerFirstLogin) {
     return NextResponse.json({ error: 'Invalid trail name or password' }, { status: 401 });
   }
 
-  if (isOwner && !user.passwordHash && ownerAdminOk) {
-    await updateUser(user.id, { passwordHash: hashPassword(password), onboardingDone: true });
+  if (ownerFirstLogin || (isOwner && ownerAdminOk && !passwordOk)) {
+    await updateUser(user.id, {
+      passwordHash: hashPassword(password),
+      username: username || user.username,
+      onboardingDone: true,
+    });
   }
 
   const token = signUserSession(user.id);

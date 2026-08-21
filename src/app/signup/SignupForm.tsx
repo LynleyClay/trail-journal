@@ -12,8 +12,7 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo') ?? '/onboarding';
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [trailName, setTrailName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +25,7 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, displayName, password }),
+        body: JSON.stringify({ trailName, password }),
       });
       const data = (await res.json()) as { error?: string; claimedOwner?: boolean };
       if (!res.ok) {
@@ -46,38 +45,24 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
       <p className="text-sm text-stone-500 mb-8">Start your own trail journal and map.</p>
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         <div>
-          <label htmlFor="displayName" className="block text-sm font-medium text-stone-700 mb-1">
-            Display name
-          </label>
-          <input
-            id="displayName"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="username" className="block text-sm font-medium text-stone-700 mb-1">
+          <label htmlFor="trailName" className="block text-sm font-medium text-stone-700 mb-1">
             Trail name
           </label>
           <input
-            id="username"
+            id="trailName"
             type="text"
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase())}
-            pattern="[a-z0-9][a-z0-9_-]{2,29}"
+            autoComplete="nickname"
+            value={trailName}
+            onChange={(e) => setTrailName(e.target.value)}
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
             required
           />
           <p className="text-xs text-stone-500 mt-1">
-            What hikers call you. Used in your profile URL: /u/{username || 'trailname'}
+            What hikers call you. Emoji is fine — like Bovi 🐄.
           </p>
           <p className="text-xs text-stone-500 mt-1">
-            This is Lynley&apos;s journal — use trail name <strong>{ownerTrailName}</strong> to keep
-            the existing posts and routes.
+            This journal already belongs to <strong>{ownerTrailName}</strong>. Use that trail name
+            (or lynley) to keep the existing posts and routes.
           </p>
         </div>
         <div>
@@ -90,7 +75,7 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            minLength={8}
+            minLength={4}
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
             required
           />

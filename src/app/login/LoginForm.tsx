@@ -49,13 +49,12 @@ export default function LoginForm({ ownerTrailName }: { ownerTrailName: string }
             type="text"
             autoComplete="username"
             value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase())}
+            onChange={(e) => setUsername(e.target.value)}
             className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
             required
           />
           <p className="text-xs text-stone-500 mt-1">
-            Site owner: sign in as <strong>{ownerTrailName}</strong> to keep the existing journal and
-            routes.
+            Sign in as <strong>LynleyClay</strong> (or {ownerTrailName}) with your journal password.
           </p>
         </div>
         <div>
