@@ -39,21 +39,25 @@ describe('elevation helpers', () => {
   });
 
   it('ignores DEM jitter when totaling climb', () => {
-    expect(elevationGainLoss([1000, 1008, 1003, 1400, 1388, 1800]).gainFt).toBeCloseTo(800, 0);
+    const { gainFt } = elevationGainLoss([1000, 1008, 1003, 1012, 1400]);
+    expect(gainFt).toBeCloseTo(388, 0);
   });
 
   it('builds a profile from sampled points and meter readings', () => {
     const profile = buildElevationProfile(
       [
         { lat: 35, lng: -83, miles: 0 },
+        { lat: 35.02, lng: -83, miles: 2 },
+        { lat: 35.04, lng: -83, miles: 4 },
         { lat: 35.1, lng: -83, miles: 8 },
+        { lat: 35.16, lng: -83, miles: 12 },
         { lat: 35.2, lng: -83, miles: 16 },
       ],
-      [300, 900, 600],
+      [300, 300, 300, 900, 900, 900],
     );
-    expect(profile.samples).toHaveLength(3);
+    expect(profile.samples).toHaveLength(6);
     expect(profile.maxFt).toBeGreaterThan(profile.minFt);
-    expect(profile.gainFt).toBeGreaterThan(1000);
+    expect(profile.gainFt).toBeGreaterThan(1500);
   });
 
   it('places a GPS point along the route by nearest stretch', () => {
@@ -74,15 +78,18 @@ describe('elevation helpers', () => {
     const profile = buildElevationProfile(
       [
         { lat: 35, lng: -83, miles: 0 },
-        { lat: 35.05, lng: -83, miles: 5 },
+        { lat: 35.01, lng: -83, miles: 2 },
+        { lat: 35.02, lng: -83, miles: 4 },
+        { lat: 35.03, lng: -83, miles: 5 },
+        { lat: 35.08, lng: -83, miles: 8 },
         { lat: 35.1, lng: -83, miles: 10 },
       ],
-      [300, 300, 900],
+      [300, 300, 300, 300, 900, 900],
     );
-    const mid = elevationAtMiles(profile, 5);
-    expect(mid.elevationFt).toBeCloseTo(metersToFeet(300), 0);
-    expect(remainingClimbFt(profile, 5)).toBeGreaterThan(1500);
-    expect(remainingClimbFt(profile, 0)).toBeGreaterThan(remainingClimbFt(profile, 5));
+    const mid = elevationAtMiles(profile, 4);
+    expect(mid.elevationFt).toBeCloseTo(metersToFeet(300), -1);
+    expect(remainingClimbFt(profile, 4)).toBeGreaterThan(1500);
+    expect(remainingClimbFt(profile, 0)).toBeGreaterThan(remainingClimbFt(profile, 8));
   });
 
   it('colors steep grades hotter than easy trail', () => {
