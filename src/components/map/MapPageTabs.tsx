@@ -10,6 +10,7 @@ import RoutePlanner from '@/components/planner/RoutePlannerLoader';
 import MyCurrentRoutes from '@/components/active/MyCurrentRoutesLoader';
 import { ShowMapMenuButton } from '@/components/map/ShowMapMenuButton';
 import { TramilyHikerList, type TramilyHiker } from '@/components/profile/TramilyHikerList';
+import type { CompletedTrailPath } from '@/lib/completed-trails';
 
 type MapTab = 'journal' | 'friends' | 'planner' | 'active';
 
@@ -17,6 +18,7 @@ type MapPageTabsProps = {
   myPosts: Post[];
   friendsPosts: Post[];
   trailGeoJsons: Record<string, FeatureCollection>;
+  completedRoutes?: CompletedTrailPath[];
   defaultCenter: [number, number];
   defaultZoom: number;
   isLoggedIn: boolean;
@@ -27,7 +29,7 @@ type MapPageTabsProps = {
 const TAB_COPY: Record<MapTab, { label: string; description: string }> = {
   journal: {
     label: 'My Trails',
-    description: "Trails I've hiked, with photos and journal entries pinned to where they happened.",
+    description: "Trails I've hiked, with photos and journal entries pinned to where they happened. Finish a current route to add it here.",
   },
   friends: {
     label: 'Tramily',
@@ -78,6 +80,7 @@ export default function MapPageTabs({
   myPosts,
   friendsPosts,
   trailGeoJsons,
+  completedRoutes = [],
   defaultCenter,
   defaultZoom,
   isLoggedIn,
@@ -236,6 +239,7 @@ export default function MapPageTabs({
                   <MapView
                     posts={journalPosts}
                     trailGeoJsons={trailGeoJsons}
+                    completedRoutes={completedRoutes}
                     defaultCenter={defaultCenter}
                     defaultZoom={defaultZoom}
                   />

@@ -4,9 +4,11 @@ import { getPublishedPostsForFollowing, getPublishedPostsForUser } from '@/lib/p
 import { getDefaultJournalPosts } from '@/lib/default-journal';
 import { loadTrailGeoJsonsForUser } from '@/lib/trail-geojson';
 import { getCurrentUser } from '@/lib/user-session';
-import { getSiteOwner, getSiteOwnerTrailIds } from '@/lib/site-owner';
+import { getSiteOwner, getSiteOwnerTrailIds, getSiteOwnerUserId } from '@/lib/site-owner';
 import { getAllUsers } from '@/lib/users';
 import { getFollowingIds } from '@/lib/follows';
+import { getActiveRoutes } from '@/lib/active-routes';
+import { completedTrailPathsFromRoutes } from '@/lib/completed-trails';
 import MapPageTabs from '@/components/map/MapPageTabsLoader';
 import type { TramilyHiker } from '@/components/profile/TramilyHikerList';
 
@@ -19,6 +21,8 @@ export default async function MapPage() {
   const friendsPosts = user ? await getPublishedPostsForFollowing(user.id) : [];
   const trailIds = user ? user.trailsCompleted : await getSiteOwnerTrailIds();
   const trailGeoJsons = loadTrailGeoJsonsForUser(trailIds);
+  const routesUserId = user?.id ?? (await getSiteOwnerUserId());
+  const completedRoutes = completedTrailPathsFromRoutes(await getActiveRoutes(routesUserId));
   const tramilyIds = user ? new Set(await getFollowingIds(user.id)) : new Set<string>();
   const hikers: TramilyHiker[] = user
     ? (await getAllUsers())
@@ -44,6 +48,7 @@ export default async function MapPage() {
           myPosts={myPosts}
           friendsPosts={friendsPosts}
           trailGeoJsons={trailGeoJsons}
+          completedRoutes={completedRoutes}
           defaultCenter={config.map.defaultCenter}
           defaultZoom={config.map.defaultZoom}
           isLoggedIn={!!user}

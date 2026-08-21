@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { hasR2Store, r2Client, r2Bucket, r2PublicUrl } from '@/lib/r2';
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { hasR2Store, r2Client, r2Bucket } from '@/lib/r2';
 
 export type User = {
   id: string;
@@ -50,10 +50,19 @@ function writeLocal(users: User[]): void {
 }
 
 async function readR2(): Promise<User[]> {
-  const res = await fetch(r2PublicUrl(R2_DATA_KEY), {
-    next: { revalidate: 60, tags: ['users-data'] },
-  });
-  return res.ok ? ((await res.json()) as User[]) : [];
+  try {
+    const res = await r2Client().send(
+      new GetObjectCommand({
+        Bucket: r2Bucket(),
+        Key: R2_DATA_KEY,
+      }),
+    );
+    const raw = await res.Body?.transformToString();
+    if (!raw) return [];
+    return JSON.parse(raw) as User[];
+  } catch {
+    return [];
+  }
 }
 
 async function writeR2(users: User[]): Promise<void> {
@@ -63,6 +72,7 @@ async function writeR2(users: User[]): Promise<void> {
       Key: R2_DATA_KEY,
       Body: JSON.stringify(users, null, 2),
       ContentType: 'application/json',
+      CacheControl: 'no-store',
     }),
   );
 }
@@ -72,7 +82,6 @@ async function readAll(): Promise<User[]> {
   if (!hasR2Store()) return local;
   try {
     const remote = await readR2();
-    if (!remote.length) return local;
     if (!remote.length) return local;
     const owner = local.find((u) => u.id === OWNER_ID);
     const remoteOwner = remote.find((u) => u.id === OWNER_ID);

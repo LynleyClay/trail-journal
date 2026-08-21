@@ -7,6 +7,7 @@ import type { Post } from '@/lib/posts';
 import { photoUrl } from '@/lib/photo-url';
 import { TILE_URL, TILE_ATTRIBUTION, fixLeafletIcons } from '@/lib/leaflet-config';
 import { postMarkerPosition } from '@/lib/post-location';
+import type { CompletedTrailPath } from '@/lib/completed-trails';
 import { Lightbox } from './Lightbox';
 import 'leaflet/dist/leaflet.css';
 
@@ -15,6 +16,7 @@ interface MapViewProps {
   trailGeoJsons: Record<string, FeatureCollection>;
   defaultCenter: [number, number];
   defaultZoom: number;
+  completedRoutes?: CompletedTrailPath[];
 }
 
 interface LightboxState {
@@ -53,7 +55,13 @@ function FitAllTrails({
   return null;
 }
 
-export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZoom }: MapViewProps) {
+export default function MapView({
+  posts,
+  trailGeoJsons,
+  defaultCenter,
+  defaultZoom,
+  completedRoutes = [],
+}: MapViewProps) {
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
 
   useEffect(() => {
@@ -77,7 +85,10 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
         <FitAllTrails
           trailGeoJsons={trailGeoJsons}
-          routes={posts.flatMap((post) => (post.route && post.route.length > 1 ? [post.route] : []))}
+          routes={[
+            ...posts.flatMap((post) => (post.route && post.route.length > 1 ? [post.route] : [])),
+            ...completedRoutes.map((route) => route.path),
+          ]}
         />
 
         {Object.entries(trailGeoJsons).map(([name, geoJson]) => (
@@ -86,6 +97,19 @@ export default function MapView({ posts, trailGeoJsons, defaultCenter, defaultZo
             data={geoJson}
             style={{ color: TRAIL_COLORS[name] ?? '#64748b', weight: 2, opacity: 0.7 }}
           />
+        ))}
+
+        {completedRoutes.map((route) => (
+          <Polyline
+            key={`completed-${route.id}`}
+            positions={route.path}
+            pathOptions={{ color: '#059669', weight: 4, opacity: 0.85 }}
+          >
+            <Popup>
+              <strong className="text-sm">{route.name}</strong>
+              <span className="block text-xs text-stone-500">Completed hike</span>
+            </Popup>
+          </Polyline>
         ))}
 
         {posts.map((post) =>

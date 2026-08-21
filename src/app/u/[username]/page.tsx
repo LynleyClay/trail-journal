@@ -5,6 +5,8 @@ import { getUserByUsername, toPublicUser } from '@/lib/users';
 import { getPublishedPostsForUser } from '@/lib/posts';
 import { readConfig } from '@/lib/config';
 import { loadTrailGeoJsonsForUser } from '@/lib/trail-geojson';
+import { getActiveRoutes } from '@/lib/active-routes';
+import { completedTrailPathsFromRoutes } from '@/lib/completed-trails';
 import { getCurrentUser } from '@/lib/user-session';
 import { isFollowing } from '@/lib/follows';
 import MapView from '@/components/MapViewLoader';
@@ -35,6 +37,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
   const config = readConfig();
   const posts = await getPublishedPostsForUser(user.id);
   const trailGeoJsons = loadTrailGeoJsonsForUser(user.trailsCompleted);
+  const completedRoutes = completedTrailPathsFromRoutes(await getActiveRoutes(user.id));
   const currentUser = await getCurrentUser();
   const publicUser = toPublicUser(user);
   const profileUrl = `/u/${user.username}`;
@@ -53,7 +56,12 @@ export default async function PublicProfilePage({ params }: PageProps) {
             <p className="text-sm text-stone-500 mt-1">/{publicUser.username}</p>
             {publicUser.trailsCompleted.length > 0 && (
               <p className="text-sm text-stone-600 mt-2">
-                Trails hiked: {publicUser.trailsCompleted.map((id) => id.toUpperCase()).join(', ')}
+                Long trails: {publicUser.trailsCompleted.map((id) => id.toUpperCase()).join(', ')}
+              </p>
+            )}
+            {completedRoutes.length > 0 && (
+              <p className="text-sm text-stone-600 mt-2">
+                Hikes: {completedRoutes.map((route) => route.name).join(', ')}
               </p>
             )}
             {currentUser?.id === user.id && (
@@ -85,6 +93,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
         <MapView
           posts={posts}
           trailGeoJsons={trailGeoJsons}
+          completedRoutes={completedRoutes}
           defaultCenter={config.map.defaultCenter}
           defaultZoom={config.map.defaultZoom}
         />

@@ -1,15 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 type SignupFormProps = {
   ownerTrailName: string;
+  signedInAs?: string | null;
 };
 
-export default function SignupForm({ ownerTrailName }: SignupFormProps) {
-  const router = useRouter();
+export default function SignupForm({ ownerTrailName, signedInAs }: SignupFormProps) {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo') ?? '/onboarding';
   const [trailName, setTrailName] = useState('');
@@ -25,15 +25,24 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ trailName, password }),
       });
-      const data = (await res.json()) as { error?: string; claimedOwner?: boolean };
+      let data: { error?: string; claimedOwner?: boolean } = {};
+      try {
+        data = (await res.json()) as { error?: string; claimedOwner?: boolean };
+      } catch {
+        setError('Signup failed. Please try again.');
+        return;
+      }
       if (!res.ok) {
         setError(data.error ?? 'Signup failed');
         return;
       }
-      router.push(data.claimedOwner ? '/map' : returnTo);
-      router.refresh();
+      const next = data.claimedOwner ? '/map' : returnTo.startsWith('/') ? returnTo : '/onboarding';
+      window.location.assign(next);
+    } catch {
+      setError('Could not reach the server. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -43,6 +52,12 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-16">
       <h1 className="text-2xl font-bold text-stone-900 mb-2">Create account</h1>
       <p className="text-sm text-stone-500 mb-8">Start your own trail journal and map.</p>
+      {signedInAs && (
+        <p className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          You&apos;re already signed in as <strong>{signedInAs}</strong>. Sign out first if you want
+          to create a different hiker account.
+        </p>
+      )}
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         <div>
           <label htmlFor="trailName" className="block text-sm font-medium text-stone-700 mb-1">
@@ -58,11 +73,7 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
             required
           />
           <p className="text-xs text-stone-500 mt-1">
-            What hikers call you. Emoji is fine — like Bovi 🐄.
-          </p>
-          <p className="text-xs text-stone-500 mt-1">
-            This journal already belongs to <strong>{ownerTrailName}</strong>. Use that trail name
-            (or lynley) to keep the existing posts and routes.
+            Pick a new trail name (at least 3 letters). {ownerTrailName} is already taken.
           </p>
         </div>
         <div>
@@ -83,7 +94,7 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !!signedInAs}
           className="w-full rounded-md bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
         >
           {loading ? 'Creating account…' : 'Sign up'}
@@ -94,6 +105,23 @@ export default function SignupForm({ ownerTrailName }: SignupFormProps) {
         <Link href="/login" className="text-emerald-700 hover:underline">
           Sign in
         </Link>
+        {signedInAs ? (
+          <>
+            {' '}
+            ·{' '}
+            <button
+              type="button"
+              className="text-emerald-700 hover:underline"
+              onClick={() => {
+                void fetch('/api/auth/logout', { method: 'POST' }).then(() => {
+                  window.location.assign('/signup');
+                });
+              }}
+            >
+              Sign out
+            </button>
+          </>
+        ) : null}
       </p>
     </main>
   );

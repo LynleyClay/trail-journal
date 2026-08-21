@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ActiveRoute } from '@/lib/active-routes';
+import { isCurrentRoute } from '@/lib/completed-trails';
 import { routeStats } from '@/lib/routes';
 import {
   filterPoisNearRoute,
@@ -77,6 +79,7 @@ export default function MyCurrentRoutes({
   isLoggedIn = true,
   ownerDisplayName = 'the owner',
 }: MyCurrentRoutesProps) {
+  const router = useRouter();
   const [routes, setRoutes] = useState<ActiveRoute[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialRouteId ?? null);
   const [loading, setLoading] = useState(true);
@@ -92,6 +95,7 @@ export default function MyCurrentRoutes({
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [inspect, setInspect] = useState<{ lat: number; lng: number; miles: number } | null>(null);
+  const [completing, setCompleting] = useState(false);
 
   const selected = routes.find((r) => r.id === selectedId) ?? null;
   const selectedOfflineReady = selected ? offlineReadyIds.has(selected.id) : false;
@@ -130,9 +134,10 @@ export default function MyCurrentRoutes({
     setIsOffline(!online);
 
     if (!online) {
-      setRoutes(offlineRoutes);
-      setOfflineReadyIds(new Set(offlineRoutes.map((r) => r.id)));
-      if (offlineRoutes.length === 0) {
+      const current = offlineRoutes.filter((route) => isCurrentRoute(route.status));
+      setRoutes(current);
+      setOfflineReadyIds(new Set(current.map((r) => r.id)));
+      if (current.length === 0) {
         setError('You are offline. Download a route while connected to use the map without service.');
       }
       setLoading(false);
@@ -143,13 +148,16 @@ export default function MyCurrentRoutes({
       const res = await fetch('/api/routes');
       if (!res.ok) throw new Error('Failed to load routes');
       const data = (await res.json()) as { routes: ActiveRoute[] };
-      const merged = mergeRoutes(data.routes, offlineRoutes);
+      const merged = mergeRoutes(data.routes, offlineRoutes).filter((route) =>
+        isCurrentRoute(route.status),
+      );
       setRoutes(merged);
       await refreshOfflineStatus(merged);
     } catch {
       if (offlineRoutes.length > 0) {
-        setRoutes(offlineRoutes);
-        setOfflineReadyIds(new Set(offlineRoutes.map((r) => r.id)));
+        const current = offlineRoutes.filter((route) => isCurrentRoute(route.status));
+        setRoutes(current);
+        setOfflineReadyIds(new Set(current.map((r) => r.id)));
         setIsOffline(true);
       } else {
         setError('Failed to load routes');
@@ -274,6 +282,38 @@ export default function MyCurrentRoutes({
       setError(err instanceof Error ? err.message : 'Failed to find towns and water');
     } finally {
       setRefreshingPois(false);
+    }
+  };
+
+  const completeRoute = async (id: string) => {
+    if (
+      !confirm(
+        'Add this hike to My Trails? It will leave Current Routes and show on your trail map.',
+      )
+    ) {
+      return;
+    }
+    setCompleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/routes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'Could not add this hike to your trail map');
+      setRoutes((prev) => prev.filter((r) => r.id !== id));
+      if (selectedId === id) {
+        setSelectedId(null);
+        setTrackGps(false);
+      }
+      router.push('/map');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not add this hike to your trail map');
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -593,13 +633,27 @@ export default function MyCurrentRoutes({
               </p>
             )}
             {isLoggedIn && !isOffline && (
-              <button
-                type="button"
-                onClick={() => removeRoute(selected.id)}
-                className="text-xs text-red-600 hover:underline"
-              >
-                Remove route
-              </button>
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => void completeRoute(selected.id)}
+                  disabled={completing}
+                  className="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {completing ? 'Adding to trail map…' : 'Add to my trail map'}
+                </button>
+                <p className="text-xs text-stone-500">
+                  When this hike is done, move it onto My Trails. It stays your path — not the whole
+                  long trail.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => removeRoute(selected.id)}
+                  className="text-xs text-red-600 hover:underline"
+                >
+                  Remove route
+                </button>
+              </div>
             )}
           </div>
         )}
