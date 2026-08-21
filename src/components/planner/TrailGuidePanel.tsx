@@ -121,8 +121,8 @@ export function TrailGuidePanel({
           </>
         ) : (
           <p className="text-sm text-stone-600">
-            Trail guide coming soon. You can still add this trail to your route—the corridor will
-            stitch in on the map.
+            Trail guide coming soon. Tap two points on this trail on the map to use only a stretch,
+            or add the full corridor below.
           </p>
         )}
       </div>
@@ -131,10 +131,9 @@ export function TrailGuidePanel({
         <button
           type="button"
           onClick={onConnect}
-          disabled={isConnected}
-          className="flex-1 min-w-[120px] rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 min-w-[120px] rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm font-medium hover:bg-emerald-700"
         >
-          {isConnected ? `On your route (#${connectedOrder})` : 'Add to route'}
+          Add full trail
         </button>
         {guide && (
           <button
@@ -150,6 +149,11 @@ export function TrailGuidePanel({
           </button>
         )}
       </div>
+      <p className="text-xs text-stone-500">
+        {isConnected
+          ? `Already on your route (#${connectedOrder}). Tap two points on the map to use only a stretch.`
+          : 'Prefer a section? Tap two points on this trail on the map instead of adding the whole thing.'}
+      </p>
 
       {guide && (
         <div className="space-y-2">

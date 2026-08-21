@@ -776,6 +776,7 @@ export function trailToWaypoints(
       lat: p.lat,
       lng: p.lng,
       note: trail.name,
+      trailId: trail.id,
     }
   })
 }
@@ -818,6 +819,166 @@ export function appendTrailToRoute(
   }
 
   return { waypoints: [...waypoints, ...added], gapMiles }
+}
+
+function almostSame(a: LatLng, b: LatLng, eps = 1e-5): boolean {
+  return Math.abs(a.lat - b.lat) < eps && Math.abs(a.lng - b.lng) < eps
+}
+
+export type TrailSnap = {
+  trailId: string
+  lat: number
+  lng: number
+  index: number
+  t: number
+  progress: number
+  distMiles: number
+}
+
+function nearestPointOnSegment(
+  p: LatLng,
+  a: LatLng,
+  b: LatLng,
+): { lat: number; lng: number; t: number; distMiles: number } {
+  const dx = b.lng - a.lng
+  const dy = b.lat - a.lat
+  const len2 = dx * dx + dy * dy
+  const t =
+    len2 === 0
+      ? 0
+      : Math.max(0, Math.min(1, ((p.lng - a.lng) * dx + (p.lat - a.lat) * dy) / len2))
+  const lat = a.lat + t * dy
+  const lng = a.lng + t * dx
+  return { lat, lng, t, distMiles: haversineMiles(p, { lat, lng }) }
+}
+
+/** Project a click onto the nearest point along a trail corridor. */
+export function snapToTrail(trail: LongTrail, point: LatLng): TrailSnap {
+  let best: TrailSnap | null = null
+  for (let i = 0; i < trail.path.length - 1; i++) {
+    const a = trail.path[i]
+    const b = trail.path[i + 1]
+    if (!a || !b) continue
+    const n = nearestPointOnSegment(point, a, b)
+    if (!best || n.distMiles < best.distMiles) {
+      best = {
+        trailId: trail.id,
+        lat: n.lat,
+        lng: n.lng,
+        index: i,
+        t: n.t,
+        progress: i + n.t,
+        distMiles: n.distMiles,
+      }
+    }
+  }
+  const fallback = trail.path[0]
+  if (!best && fallback) {
+    return {
+      trailId: trail.id,
+      lat: fallback.lat,
+      lng: fallback.lng,
+      index: 0,
+      t: 0,
+      progress: 0,
+      distMiles: haversineMiles(point, fallback),
+    }
+  }
+  return best!
+}
+
+/** Vertices along `trail` from `from` to `to`, inclusive. */
+export function trailSegment(trail: LongTrail, from: LatLng, to: LatLng): LatLng[] {
+  const a = snapToTrail(trail, from)
+  const b = snapToTrail(trail, to)
+  if (Math.abs(a.progress - b.progress) < 1e-6) {
+    return [{ lat: a.lat, lng: a.lng }]
+  }
+
+  const forward = a.progress <= b.progress
+  const lo = forward ? a : b
+  const hi = forward ? b : a
+  const pts: LatLng[] = [{ lat: lo.lat, lng: lo.lng }]
+
+  for (let i = lo.index + 1; i <= hi.index; i++) {
+    const v = trail.path[i]
+    if (!v) continue
+    const last = pts[pts.length - 1]
+    if (last && !almostSame(last, v)) pts.push(v)
+  }
+
+  const end = { lat: hi.lat, lng: hi.lng }
+  const last = pts[pts.length - 1]
+  if (last && !almostSame(last, end)) pts.push(end)
+  if (!forward) pts.reverse()
+  return pts
+}
+
+export function uniqueTrailIds(waypoints: Waypoint[]): string[] {
+  const ids: string[] = []
+  for (const w of waypoints) {
+    if (w.trailId && ids[ids.length - 1] !== w.trailId) ids.push(w.trailId)
+  }
+  return ids
+}
+
+/** Snap a map click onto a nearby long-trail corridor, or null if none are close. */
+export const SNAP_TO_TRAIL_MILES = 0.75
+
+export function nearestTrailSnap(
+  point: LatLng,
+  maxMiles = SNAP_TO_TRAIL_MILES,
+): TrailSnap | null {
+  let best: TrailSnap | null = null
+  for (const trail of LONG_TRAILS) {
+    const snap = snapToTrail(trail, point)
+    if (!best || snap.distMiles < best.distMiles) best = snap
+  }
+  if (!best || best.distMiles > maxMiles) return null
+  return best
+}
+
+/**
+ * Drop a pin on `trail`. If the last waypoint is already on the same trail,
+ * follow the corridor between the two pins instead of adding the whole trail.
+ */
+export function appendTrailPin(
+  waypoints: Waypoint[],
+  trail: LongTrail,
+  click: LatLng,
+): { waypoints: Waypoint[]; added: number; kind: 'pin' | 'segment' } {
+  const snap = snapToTrail(trail, click)
+  const last = waypoints[waypoints.length - 1]
+
+  if (last?.trailId === trail.id) {
+    const along = trailSegment(trail, last, snap)
+    if (along.length < 2) {
+      return { waypoints, added: 0, kind: 'pin' }
+    }
+    const addedWps: Waypoint[] = along.slice(1).map((p, i, arr) => ({
+      id: uid(trail.id),
+      name: i === arr.length - 1 ? `${trail.abbrev} pin` : trail.abbrev,
+      lat: p.lat,
+      lng: p.lng,
+      note: trail.name,
+      trailId: trail.id,
+    }))
+    return {
+      waypoints: [...waypoints, ...addedWps],
+      added: addedWps.length,
+      kind: 'segment',
+    }
+  }
+
+  const pin: Waypoint = {
+    id: uid(trail.id),
+    name: `${trail.abbrev} pin`,
+    lat: snap.lat,
+    lng: snap.lng,
+    note: trail.name,
+    trailId: trail.id,
+  }
+  return { waypoints: [...waypoints, pin], added: 1, kind: 'pin' }
 }
 
 export function getTrailById(id: string): LongTrail | undefined {

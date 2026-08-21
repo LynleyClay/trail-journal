@@ -112,15 +112,13 @@ function TrailLayer({
   trail,
   connected,
   highlighted,
-  connectMode,
-  onSelect,
+  onTrailClick,
   onHover,
 }: {
   trail: LongTrail;
   connected: boolean;
   highlighted: boolean;
-  connectMode: boolean;
-  onSelect: (id: string) => void;
+  onTrailClick: (id: string, lat: number, lng: number) => void;
   onHover: (id: string | null) => void;
 }) {
   const positions = useMemo(() => trailPositions(trail), [trail]);
@@ -128,11 +126,11 @@ function TrailLayer({
   const opacity = connected ? 0.98 : highlighted ? 0.95 : 0.82;
 
   const handlers = {
-    click: (e: { originalEvent: Event }) => {
+    click: (e: { originalEvent: Event; latlng: { lat: number; lng: number } }) => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const L = require('leaflet') as typeof import('leaflet');
       L.DomEvent.stopPropagation(e as unknown as L.LeafletMouseEvent);
-      if (connectMode) onSelect(trail.id);
+      onTrailClick(trail.id, e.latlng.lat, e.latlng.lng);
     },
     mouseover: () => onHover(trail.id),
     mouseout: () => onHover(null),
@@ -179,7 +177,9 @@ function TrailLayer({
               <p className="text-sm mt-1">
                 {trail.termini[0]} → {trail.termini[1]}
               </p>
-              <p className="text-sm text-stone-500">{trail.miles.toLocaleString()} mi · click to view guide</p>
+              <p className="text-sm text-stone-500">
+                {trail.miles.toLocaleString()} mi · tap two points to use a stretch
+              </p>
             </Popup>
           </CircleMarker>
           <CircleMarker
@@ -203,15 +203,13 @@ function TrailLayer({
 type TrailMapProps = {
   waypoints: Waypoint[];
   defaultCenter: [number, number];
-  addMode: boolean;
-  connectMode: boolean;
   connectedTrailIds: string[];
   selectedTrailId: string | null;
   showGuideStops: boolean;
   highlightedTrailId: string | null;
   onAddWaypoint: (lat: number, lng: number) => void;
   onMoveWaypoint: (id: string, lat: number, lng: number) => void;
-  onSelectTrail: (id: string) => void;
+  onTrailClick: (id: string, lat: number, lng: number) => void;
   onHoverTrail: (id: string | null) => void;
   fitKey: number;
   focusPoint?: { lat: number; lng: number; key: number };
@@ -220,15 +218,13 @@ type TrailMapProps = {
 export function TrailMap({
   waypoints,
   defaultCenter,
-  addMode,
-  connectMode,
   connectedTrailIds,
   selectedTrailId,
   showGuideStops,
   highlightedTrailId,
   onAddWaypoint,
   onMoveWaypoint,
-  onSelectTrail,
+  onTrailClick,
   onHoverTrail,
   fitKey,
   focusPoint,
@@ -279,7 +275,7 @@ export function TrailMap({
           focusKey={focusPoint.key}
         />
       )}
-      <ClickToAdd enabled={addMode && !connectMode} onAdd={onAddWaypoint} />
+      <ClickToAdd enabled onAdd={onAddWaypoint} />
 
       {sortedTrails.map((trail) => (
         <TrailLayer
@@ -287,8 +283,7 @@ export function TrailMap({
           trail={trail}
           connected={connectedTrailIds.includes(trail.id)}
           highlighted={highlightedTrailId === trail.id || selectedTrailId === trail.id}
-          connectMode={connectMode}
-          onSelect={onSelectTrail}
+          onTrailClick={onTrailClick}
           onHover={onHoverTrail}
         />
       ))}
@@ -326,11 +321,15 @@ export function TrailMap({
         />
       )}
 
-      {waypoints.map((w, i) => (
+      {waypoints.map((w, i) => {
+        if (w.kind === 'shape') return null;
+        const stopIndex = waypoints.slice(0, i + 1).filter((p) => p.kind !== 'shape').length - 1;
+        const stopCount = waypoints.filter((p) => p.kind !== 'shape').length;
+        return (
         <Marker
           key={w.id}
           position={[w.lat, w.lng]}
-          icon={blazeIcon(i, i === 0 || i === waypoints.length - 1)}
+          icon={blazeIcon(stopIndex, stopIndex === 0 || stopIndex === stopCount - 1)}
           draggable
           eventHandlers={{
             dragend: (e) => {
@@ -345,7 +344,8 @@ export function TrailMap({
             {w.note ? <p className="text-sm mt-1">{w.note}</p> : null}
           </Popup>
         </Marker>
-      ))}
+        );
+      })}
     </MapContainer>
   );
 }

@@ -4,6 +4,10 @@ export type Waypoint = {
   lat: number;
   lng: number;
   note?: string;
+  /** Set when this point was snapped onto a named long trail. */
+  trailId?: string;
+  /** Geometry-only points that follow a walkable path between stops. */
+  kind?: 'stop' | 'shape';
 };
 
 export function haversineMiles(
@@ -32,7 +36,7 @@ export function routeStats(waypoints: Waypoint[]) {
   return {
     miles,
     segments: Math.max(0, waypoints.length - 1),
-    stops: waypoints.length,
+    stops: waypoints.filter((w) => w.kind !== 'shape').length,
   };
 }
 

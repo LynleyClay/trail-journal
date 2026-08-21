@@ -30,6 +30,11 @@ export function WaypointList({
         const prev = waypoints[i - 1];
         const leg = prev ? haversineMiles(prev, w) : 0;
         cumulative += leg;
+        if (w.kind === 'shape') return null;
+        const prevStop = [...waypoints.slice(0, i)].reverse().find((p) => p.kind !== 'shape');
+        const displayLeg = prevStop ? haversineMiles(prevStop, w) : 0;
+        const stopNumber = waypoints.slice(0, i + 1).filter((p) => p.kind !== 'shape').length;
+        const isFirstStop = stopNumber === 1;
         return (
           <li
             key={w.id}
@@ -43,7 +48,7 @@ export function WaypointList({
               onClick={() => onSelect(w.id)}
             >
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold shrink-0">
-                {i + 1}
+                {stopNumber}
               </span>
               <span className="min-w-0 flex-1">
                 <input
@@ -54,9 +59,9 @@ export function WaypointList({
                   aria-label="Waypoint name"
                 />
                 <span className="block text-xs text-stone-500">
-                  {i === 0
+                  {isFirstStop
                     ? 'Start · 0 mi'
-                    : `+${leg.toFixed(0)} mi · ${cumulative.toFixed(0)} mi total`}
+                    : `+${displayLeg.toFixed(0)} mi · ${cumulative.toFixed(0)} mi total`}
                 </span>
                 {w.note && (
                   <span className="block text-xs text-stone-400 truncate">{w.note}</span>

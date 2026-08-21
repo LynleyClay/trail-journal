@@ -1,12 +1,18 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   LONG_TRAILS,
+  SNAP_TO_TRAIL_MILES,
+  appendTrailPin,
   appendTrailToRoute,
   getTrailById,
+  nearestTrailSnap,
+  snapToTrail,
+  uniqueTrailIds,
 } from '@/lib/long-trails';
 import { routeStats, uid, type Waypoint } from '@/lib/routes';
+import { appendRoutedPin, requestWalkPath, shouldTryWalkPath } from '@/lib/walk-path';
 import { TrailCatalog } from './TrailCatalog';
 import { TrailGuidePanel } from './TrailGuidePanel';
 import { RouteGuideInsight } from './RouteGuideInsight';
@@ -16,8 +22,6 @@ import { LocationSearch } from './LocationSearch';
 import { getTrailGuide } from '@/lib/trail-guides';
 import type { GeocodeResult } from '@/lib/geocode';
 import { ShowMapMenuButton } from '@/components/map/ShowMapMenuButton';
-
-type BuildMode = 'connect' | 'pin';
 
 type RoutePlannerProps = {
   defaultCenter: [number, number];
@@ -34,8 +38,7 @@ export default function RoutePlanner({
 }: RoutePlannerProps) {
   const [routeName, setRouteName] = useState('My route');
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
-  const [connectedTrailIds, setConnectedTrailIds] = useState<string[]>([]);
-  const [mode, setMode] = useState<BuildMode>('connect');
+  const [actionSizes, setActionSizes] = useState<number[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedTrailId, setSelectedTrailId] = useState<string | null>(null);
   const [showGuideStopsOnMap, setShowGuideStopsOnMap] = useState(true);
@@ -44,22 +47,29 @@ export default function RoutePlanner({
   const [fitKey, setFitKey] = useState(0);
   const [mapFocus, setMapFocus] = useState({ lat: 0, lng: 0, key: 0 });
   const [status, setStatus] = useState<string | null>(
-    'Click a trail to read its guide, then add it to your route.',
+    'Tap a trail to pin onto it, then tap further along it to use only that stretch.',
   );
   const [sidebarTab, setSidebarTab] = useState<'trails' | 'route'>('trails');
   const [approving, setApproving] = useState(false);
   const [approveError, setApproveError] = useState<string | null>(null);
+  const [lookingForPath, setLookingForPath] = useState(false);
+  const placingRef = useRef(false);
 
   const stats = useMemo(() => routeStats(waypoints), [waypoints]);
+  const connectedTrailIds = useMemo(() => uniqueTrailIds(waypoints), [waypoints]);
+
+  const recordAction = useCallback((added: number) => {
+    if (added <= 0) return;
+    setActionSizes((sizes) => [...sizes, added]);
+  }, []);
 
   const clearRoute = useCallback(() => {
     setWaypoints([]);
-    setConnectedTrailIds([]);
+    setActionSizes([]);
     setSelectedId(null);
     setSelectedTrailId(null);
     setRouteName('My route');
-    setMode('connect');
-    setStatus('Route cleared. Click trails to connect a new line.');
+    setStatus('Route cleared. Tap a trail to pin a stretch, or tap the map for a custom pin.');
     setFitKey((k) => k + 1);
     setSidebarTab('trails');
   }, []);
@@ -77,54 +87,139 @@ export default function RoutePlanner({
     const trail = getTrailById(trailId);
     if (!trail) return;
 
-    setConnectedTrailIds((prevIds) => {
-      if (prevIds.includes(trailId)) {
+    setWaypoints((prevWps) => {
+      const { waypoints: next, gapMiles } = appendTrailToRoute(prevWps, trail);
+      const added = next.length - prevWps.length;
+      recordAction(added);
+      if (prevWps.length === 0) {
+        setStatus(`Added the full ${trail.name}. Tap the trail to pin a shorter stretch next time.`);
+      } else if (gapMiles > 0) {
         setStatus(
-          `${trail.abbrev} is already in your route. Undo, clear, or connect a different trail.`,
+          `Connected full ${trail.abbrev} with a ~${gapMiles.toFixed(0)} mi link from your last point.`,
         );
-        return prevIds;
+      } else {
+        setStatus(`Joined the full ${trail.name} at the near terminus.`);
       }
-
-      setWaypoints((prevWps) => {
-        const { waypoints: next, gapMiles } = appendTrailToRoute(prevWps, trail);
-        if (prevWps.length === 0) {
-          setStatus(
-            `Started on ${trail.name}. Click another trail to connect from the open end.`,
-          );
-        } else if (gapMiles > 0) {
-          setStatus(
-            `Connected ${trail.abbrev} with a ~${gapMiles.toFixed(0)} mi link from your last point.`,
-          );
-        } else {
-          setStatus(`Joined ${trail.name} at the near terminus.`);
-        }
-        setSelectedId(next[next.length - 1]?.id ?? null);
-        setSidebarTab('route');
-        return next;
-      });
-
-      return [...prevIds, trailId];
+      setSelectedId(next[next.length - 1]?.id ?? null);
+      setSidebarTab('route');
+      return next;
     });
     setSelectedTrailId(trailId);
     setHighlightedTrailId(trailId);
-  }, []);
+  }, [recordAction]);
+
+  const placePin = useCallback(
+    async (lat: number, lng: number, opts?: { name?: string; trailId?: string }) => {
+      if (placingRef.current) return;
+      placingRef.current = true;
+
+      try {
+        const last = waypoints[waypoints.length - 1];
+        const chosenTrail = opts?.trailId ? getTrailById(opts.trailId) : null;
+        const snap = chosenTrail
+          ? snapToTrail(chosenTrail, { lat, lng })
+          : nearestTrailSnap({ lat, lng }, SNAP_TO_TRAIL_MILES);
+        const destTrail = snap ? getTrailById(snap.trailId) : undefined;
+        const destPoint = snap ?? { lat, lng };
+
+        if (snap && last?.trailId === snap.trailId && destTrail) {
+          setWaypoints((prev) => {
+            const { waypoints: next, added, kind } = appendTrailPin(prev, destTrail, destPoint);
+            if (added === 0) {
+              setStatus(`That ${destTrail.abbrev} pin is too close to your last point.`);
+              return prev;
+            }
+            recordAction(added);
+            setSelectedId(next[next.length - 1]?.id ?? null);
+            setSidebarTab('route');
+            setStatus(
+              kind === 'segment'
+                ? `Using ${destTrail.abbrev} between your pins — not the full ${destTrail.miles.toLocaleString()} mi trail.`
+                : `Pinned ${destTrail.abbrev}. Tap further along it to take only that stretch.`,
+            );
+            return next;
+          });
+          setSelectedTrailId(destTrail.id);
+          setHighlightedTrailId(destTrail.id);
+          return;
+        }
+
+        let path: { lat: number; lng: number }[] = [];
+        if (last && shouldTryWalkPath(last, destPoint)) {
+          setLookingForPath(true);
+          setStatus('Looking for a walkable path…');
+          path = await requestWalkPath(last, destPoint);
+        }
+
+        const dest: Waypoint = destTrail
+          ? {
+              id: uid(destTrail.id),
+              name: opts?.name?.trim() || `${destTrail.abbrev} pin`,
+              lat: destPoint.lat,
+              lng: destPoint.lng,
+              note: destTrail.name,
+              trailId: destTrail.id,
+            }
+          : {
+              id: uid(),
+              name: opts?.name?.trim() || `Pin ${Date.now().toString().slice(-4)}`,
+              lat: destPoint.lat,
+              lng: destPoint.lng,
+            };
+
+        setWaypoints((prev) => {
+          const { waypoints: next, added, usedPath } = appendRoutedPin(prev, dest, path);
+          recordAction(added);
+          setSelectedId(dest.id);
+          setSidebarTab('route');
+          if (usedPath) {
+            setStatus(
+              destTrail
+                ? `Followed a walkable path onto ${destTrail.abbrev}.`
+                : 'Followed a walkable path between your pins.',
+            );
+          } else if (destTrail) {
+            setStatus(
+              last
+                ? `Pinned ${destTrail.abbrev}. No walkable path found — straight line from your last pin.`
+                : `Pinned ${destTrail.abbrev}. Tap further along it to take only that stretch.`,
+            );
+          } else {
+            setStatus(
+              last && path.length === 0 && shouldTryWalkPath(last, destPoint)
+                ? 'No walkable path found — dropped a straight-line pin.'
+                : opts?.name
+                  ? `Added ${opts.name} to your route.`
+                  : 'Pinned a custom waypoint.',
+            );
+          }
+          return next;
+        });
+        if (destTrail) {
+          setSelectedTrailId(destTrail.id);
+          setHighlightedTrailId(destTrail.id);
+        }
+      } finally {
+        placingRef.current = false;
+        setLookingForPath(false);
+      }
+    },
+    [waypoints, recordAction],
+  );
+
+  const snapTrailPin = useCallback(
+    (trailId: string, lat: number, lng: number) => {
+      void placePin(lat, lng, { trailId });
+    },
+    [placePin],
+  );
 
   const addWaypoint = useCallback((lat: number, lng: number, name?: string) => {
-    const point: Waypoint = {
-      id: uid(),
-      name: name?.trim() || `Pin ${Date.now().toString().slice(-4)}`,
-      lat,
-      lng,
-    };
-    setWaypoints((prev) => [...prev, point]);
-    setSelectedId(point.id);
-    setStatus(name ? `Added ${name} to your route.` : 'Pinned a custom waypoint.');
-    setSidebarTab('route');
-  }, []);
+    void placePin(lat, lng, { name });
+  }, [placePin]);
 
   const addWaypointFromSearch = useCallback(
     (place: GeocodeResult) => {
-      setMode('pin');
       addWaypoint(place.lat, place.lng, place.name);
       setMapFocus({ lat: place.lat, lng: place.lng, key: Date.now() });
     },
@@ -160,27 +255,17 @@ export default function RoutePlanner({
     });
   }, []);
 
-  const undoLastTrail = useCallback(() => {
-    setConnectedTrailIds((ids) => {
-      if (ids.length === 0) return ids;
-      const removedId = ids[ids.length - 1];
-      if (!removedId) return ids;
-      const removed = getTrailById(removedId);
-      setWaypoints(() => {
-        const remaining = ids.slice(0, -1);
-        if (remaining.length === 0) return [];
-        let built: Waypoint[] = [];
-        for (const id of remaining) {
-          const t = getTrailById(id);
-          if (!t) continue;
-          built = appendTrailToRoute(built, t).waypoints;
-        }
-        return built;
+  const undoLast = useCallback(() => {
+    setActionSizes((sizes) => {
+      if (sizes.length === 0) return sizes;
+      const n = sizes[sizes.length - 1] ?? 0;
+      setWaypoints((wps) => {
+        const next = wps.slice(0, Math.max(0, wps.length - n));
+        setSelectedId(next[next.length - 1]?.id ?? null);
+        return next;
       });
-      setStatus(
-        removed ? `Removed ${removed.abbrev} from the end of your route.` : 'Removed last trail.',
-      );
-      return ids.slice(0, -1);
+      setStatus('Undid last pin or trail stretch.');
+      return sizes.slice(0, -1);
     });
   }, []);
 
@@ -281,32 +366,10 @@ export default function RoutePlanner({
           } ${mobileMenuOpen ? '' : 'hidden lg:flex'}`}
         >
           <div className="shrink-0 p-4 pb-2 flex flex-col gap-3">
-            <div className="flex gap-2" role="group" aria-label="Build mode">
-              <button
-                type="button"
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
-                  mode === 'connect' ? 'bg-emerald-600 text-white' : 'bg-white border border-stone-300 text-stone-700'
-                }`}
-                onClick={() => {
-                  setMode('connect');
-                  setStatus('Connect mode: click a trail to view its guide, then add to route.');
-                }}
-              >
-                Connect trails
-              </button>
-              <button
-                type="button"
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
-                  mode === 'pin' ? 'bg-emerald-600 text-white' : 'bg-white border border-stone-300 text-stone-700'
-                }`}
-                onClick={() => {
-                  setMode('pin');
-                  setStatus('Pin mode: click the map to drop custom waypoints.');
-                }}
-              >
-                Pin waypoints
-              </button>
-            </div>
+            <p className="text-sm text-stone-600">
+              Tap a trail (or near one) to snap onto it. Tap again further along it for that stretch.
+              Between trails, the map looks for a walkable path instead of drawing a straight line.
+            </p>
 
             <LocationSearch onSelect={addWaypointFromSearch} />
 
@@ -314,10 +377,10 @@ export default function RoutePlanner({
               <button
                 type="button"
                 className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-100 disabled:opacity-40"
-                onClick={undoLastTrail}
-                disabled={connectedTrailIds.length === 0}
+                onClick={undoLast}
+                disabled={actionSizes.length === 0}
               >
-                Undo trail
+                Undo
               </button>
               <button
                 type="button"
@@ -427,8 +490,8 @@ export default function RoutePlanner({
               )
             ) : waypoints.length === 0 ? (
               <p className="text-sm text-stone-500">
-                No route yet. Switch to Long trails, pick a trail for its guide, then add it to your
-                route.
+                No route yet. Tap a trail on the map to pin a start, tap again to take only that
+                stretch, or drop custom pins to link trails together.
               </p>
             ) : (
               <div className="flex flex-col gap-3">
@@ -451,31 +514,27 @@ export default function RoutePlanner({
           <TrailMap
             waypoints={waypoints}
             defaultCenter={defaultCenter}
-            addMode={mode === 'pin'}
-            connectMode={mode === 'connect'}
             connectedTrailIds={connectedTrailIds}
             selectedTrailId={selectedTrailId}
             showGuideStops={showGuideStopsOnMap}
             highlightedTrailId={highlightedTrailId}
             onAddWaypoint={addWaypoint}
             onMoveWaypoint={moveWaypoint}
-            onSelectTrail={selectTrail}
+            onTrailClick={snapTrailPin}
             onHoverTrail={setHighlightedTrailId}
             fitKey={fitKey}
             focusPoint={mapFocus}
           />
           {!mobileMenuOpen && onShowMobileMenu && <ShowMapMenuButton onClick={onShowMobileMenu} />}
           <div
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-full bg-stone-900/85 text-white text-sm px-4 py-2 pointer-events-none"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-full bg-stone-900/85 text-white text-sm px-4 py-2 pointer-events-none max-w-[min(92%,28rem)] text-center"
             role="status"
           >
-            {mode === 'connect'
-              ? selectedTrailId
-                ? `${getTrailById(selectedTrailId)?.name ?? ''} — open guide in sidebar to add`
-                : highlightedTrailId
-                  ? `${getTrailById(highlightedTrailId)?.name ?? ''} — click to view guide`
-                  : 'Click a trail to view its guide'
-              : 'Click the map or search for a place to add a waypoint'}
+            {lookingForPath
+              ? 'Looking for a walkable path…'
+              : highlightedTrailId
+                ? `${getTrailById(highlightedTrailId)?.abbrev ?? ''} — tap to pin, tap again for a stretch`
+                : 'Tap a trail or near a path to snap; empty map drops a pin'}
           </div>
         </section>
       </div>
